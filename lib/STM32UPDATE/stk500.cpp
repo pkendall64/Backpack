@@ -1,7 +1,8 @@
+#include <Arduino.h>
+#include <LittleFS.h>
+
 #include "stk500.h"
 #include "stm32Updater.h"
-#include <Arduino.h>
-#include <FS.h>
 #include "logging.h"
 
 uint8_t stk_data_buff[STK_PAGE_SIZE];
@@ -24,10 +25,11 @@ void serial_empty_rx(void)
 const __FlashStringHelper *stk500_write_file(const char *filename)
 {
     uint8_t sync_iter;
-    if (!SPIFFS.exists(filename)) {
+    if (!LittleFS.exists(filename))
+    {
         return F("file does not exist!");
     }
-    File fp = SPIFFS.open(filename, "r");
+    File fp = LittleFS.open(filename, "r");
     uint32_t filesize = fp.size();
     DBGLN("filesize: %d", filesize);
     if (FLASH_SIZE < filesize) {

@@ -1,5 +1,6 @@
 #pragma once
-#include "FS.h"
+
+#include <Arduino.h>
 
 // taken and adapted from https://github.com/mengguang/esp8266_stm32_isp
 
@@ -10,6 +11,9 @@
 #define RESET_PIN 5
 #endif
 
+#if defined(FLASH_PAGE_SIZE)
+#undef FLASH_PAGE_SIZE
+#endif
 #define FLASH_START 0x08000000
 #define FLASH_SIZE 0x10000
 #define FLASH_PAGE_SIZE 0x400
@@ -25,4 +29,4 @@ void stm32flasher_hardware_init();
 
 void debug_log();
 
-const __FlashStringHelper *esp8266_spiffs_write_file(const char *filename, uint32_t const begin_addr);
+const __FlashStringHelper *esp8266_write_file(const char *filename, uint32_t const begin_addr);

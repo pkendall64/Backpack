@@ -1,13 +1,14 @@
 #pragma once
 
+#include <LittleFS.h>
 #include <Updater.h>
-#include <FS.h>
 
 class STMUpdateClass
 {
-public:
-    STMUpdateClass() {
-        SPIFFS.begin();
+  public:
+    STMUpdateClass()
+    {
+        LittleFS.begin();
     }
     void setFilename(const String& filename);
     bool begin(size_t size);

@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include "options.h"
 
 #define QUOTE(arg) #arg

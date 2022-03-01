@@ -1,3 +1,5 @@
+#include <LittleFS.h>
+
 #include "stm32Updater.h"
 #include "logging.h"
 
@@ -337,22 +339,23 @@ uint8_t cmd_go(uint32_t address)
 	return 0;
 }
 
-const __FlashStringHelper *esp8266_spiffs_write_file(const char *filename, uint32_t begin_addr)
+const __FlashStringHelper *esp8266_write_file(const char *filename, uint32_t begin_addr)
 {
-	if (!SPIFFS.exists(filename))
-	{
-		return F("file does not exist!");
-	}
-	File fp = SPIFFS.open(filename, "r");
-	uint32_t filesize = fp.size();
-	DBGLN("filesize: %d", filesize);
-	if ((FLASH_SIZE - FLASH_OFFSET) < filesize) {
-		fp.close();
-		return F("[ERROR] file is too big!");
-	}
+    if (!LittleFS.exists(filename))
+    {
+        return F("file does not exist!");
+    }
+    File fp = LittleFS.open(filename, "r");
+    uint32_t filesize = fp.size();
+    DBGLN("filesize: %d", filesize);
+    if ((FLASH_SIZE - FLASH_OFFSET) < filesize)
+    {
+        fp.close();
+        return F("[ERROR] file is too big!");
+    }
 
-	if (begin_addr < FLASH_START)
-		begin_addr += FLASH_START;
+    if (begin_addr < FLASH_START)
+        begin_addr += FLASH_START;
     String message = "Using flash base: 0x";
     message += String(begin_addr, 16);
 
