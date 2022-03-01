@@ -1,13 +1,12 @@
 #include "stmUpdateClass.h"
 
+#include "logging.h"
 #include "stk500.h"
 #include "stm32Updater.h"
-#include "logging.h"
-
 
 static const char *firmware_filename = "firmware.bin";
 
-void STMUpdateClass::setFilename(const String& filename)
+void STMUpdateClass::setFilename(const String &filename)
 {
     this->filename = filename;
 }

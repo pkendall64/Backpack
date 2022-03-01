@@ -10,14 +10,17 @@ class STMUpdateClass
     {
         LittleFS.begin();
     }
-    void setFilename(const String& filename);
+    void setFilename(const String &filename);
     bool begin(size_t size);
     size_t write(uint8_t *data, size_t len);
     bool end(bool evenIfRemaining = false);
     void printError(Print &out);
-    bool hasError() { return _error != UPDATE_ERROR_OK; }
+    bool hasError()
+    {
+        return _error != UPDATE_ERROR_OK;
+    }
 
-private:
+  private:
     int8_t flashSTM32(uint32_t flash_addr);
     String filename;
     File fsUploadFile;

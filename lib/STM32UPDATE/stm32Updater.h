@@ -14,12 +14,11 @@
 #if defined(FLASH_PAGE_SIZE)
 #undef FLASH_PAGE_SIZE
 #endif
-#define FLASH_START 0x08000000
-#define FLASH_SIZE 0x10000
+#define FLASH_START     0x08000000
+#define FLASH_SIZE      0x10000
 #define FLASH_PAGE_SIZE 0x400
-#define FLASH_OFFSET 0x4000
-#define BEGIN_ADDRESS (FLASH_START + FLASH_OFFSET)
-
+#define FLASH_OFFSET    0x4000
+#define BEGIN_ADDRESS   (FLASH_START + FLASH_OFFSET)
 
 void reset_stm32_to_isp_mode();
 
