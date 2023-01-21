@@ -383,6 +383,9 @@ RF_PRE_INIT()
 
 void setup()
 {
+  #if defined(HAS_TELNET)
+    Serial.setRxBufferSize(2048);
+  #endif
   #if !defined(HDZERO_BACKPACK)
     // Serial.begin() seems to prevent the HDZ VRX from booting
     // If we're not on HDZ, init serial early for debug msgs
@@ -433,7 +436,6 @@ void loop()
   uint32_t now = millis();
 
   devicesUpdate(now);
-  vrxModule.Loop(now);
 
   #if defined(PLATFORM_ESP8266) || defined(PLATFORM_ESP32)
     // If the reboot time is set and the current time is past the reboot time then reboot.
@@ -447,6 +449,8 @@ void loop()
   {
     return;
   }
+
+  vrxModule.Loop(now);
 
   if (BindingExpired(now))
   {

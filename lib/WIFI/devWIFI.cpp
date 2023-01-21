@@ -94,6 +94,11 @@ static AsyncEventSource logging("/logging");
 static char logBuffer[256];
 static int logPos = 0;
 
+#if defined(HAS_TELNET)
+#include "Telnet.h"
+static Telnet telnet(23);
+#endif
+
 /** Is this an IP? */
 static boolean isIp(String str)
 {
@@ -634,6 +639,7 @@ static void HandleWebUpdate()
 
   if (servicesStarted)
   {
+    #if defined(TARGET_TX_BACKPACK)
     while (Serial.available()) {
       int val = Serial.read();
       logBuffer[logPos++] = val;
@@ -643,6 +649,7 @@ static void HandleWebUpdate()
         logPos = 0;
       }
     }
+    #endif
 
     dnsServer.processNextRequest();
     #if defined(PLATFORM_ESP8266)
@@ -685,6 +692,9 @@ static int timeout()
 {
   if (wifiStarted)
   {
+    #ifdef HAS_TELNET
+    telnet.handle();
+    #endif
     HandleWebUpdate();
     return DURATION_IMMEDIATELY;
   }
