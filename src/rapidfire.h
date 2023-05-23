@@ -24,6 +24,8 @@ public:
     void SendBandCmd(uint8_t band);
 
 private:
+    void StartSPI();
+    void EndSPI();
     void SendSPI(uint8_t* buf, uint8_t bufLen);
     void EnableSPIMode();
     uint8_t crc8(uint8_t* buf, uint8_t bufLen);

@@ -42,6 +42,25 @@ Rapidfire::EnableSPIMode()
 }
 
 void
+Rapidfire::StartSPI()
+{
+    pinMode(PIN_MOSI, OUTPUT);
+    pinMode(PIN_CLK, OUTPUT);
+    pinMode(PIN_CS, OUTPUT);
+    digitalWrite(PIN_MOSI, LOW);
+    digitalWrite(PIN_CLK, LOW);
+    digitalWrite(PIN_CS, HIGH);
+}
+
+void
+Rapidfire::EndSPI()
+{
+    pinMode(PIN_MOSI, INPUT_PULLUP);
+    pinMode(PIN_CLK, INPUT_PULLUP);
+    pinMode(PIN_CS, INPUT_PULLUP);
+}
+
+void
 Rapidfire::SendBuzzerCmd()
 {
     DBGLN("Beep!");
@@ -53,9 +72,11 @@ Rapidfire::SendBuzzerCmd()
     cmd[3] = crc8(cmd, 3);
 
     // rapidfire sometimes missed a pkt, so send 3x
+    StartSPI();
     SendSPI(cmd, 4);
     SendSPI(cmd, 4);
     SendSPI(cmd, 4);
+    EndSPI();
 }
 
 void
@@ -64,9 +85,10 @@ Rapidfire::SendIndexCmd(uint8_t index)
     uint8_t newBand = index / 8 + 1;
     uint8_t newChannel = index % 8;
 
+    StartSPI();
     SendBandCmd(newBand);
-	delay(100);
     SendChannelCmd(newChannel);
+    EndSPI();
 }
 
 void
@@ -163,19 +185,10 @@ Rapidfire::SendSPI(uint8_t* buf, uint8_t bufLen)
 {
     if (!SPIModeEnabled) EnableSPIMode();
 
-    uint32_t periodMicroSec = 1000000 / BIT_BANG_FREQ;
-
-    pinMode(PIN_MOSI, OUTPUT);
-    pinMode(PIN_CLK, OUTPUT);
-    pinMode(PIN_CS, OUTPUT);
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
-    digitalWrite(PIN_CS, HIGH);
-
-    delayMicroseconds(periodMicroSec);
+    delayMicroseconds(10);
 
     digitalWrite(PIN_CS, LOW);
-    delay(100);
+    delay(10);
 
     // debug code for printing SPI pkt
     for (int i = 0; i < bufLen; ++i)
@@ -189,25 +202,20 @@ Rapidfire::SendSPI(uint8_t* buf, uint8_t bufLen)
         {
             // digitalWrite takes about 0.5us, so it is not taken into account with delays.
             digitalWrite(PIN_CLK, LOW);
-            delayMicroseconds(periodMicroSec / 4);
+            delayMicroseconds(10);
             digitalWrite(PIN_MOSI, bufByte & 0x80);
-            delayMicroseconds(periodMicroSec / 4);
+            delayMicroseconds(10);
             digitalWrite(PIN_CLK, HIGH);
-            delayMicroseconds(periodMicroSec / 2);
+            delayMicroseconds(10);
 
             bufByte <<= 1;
         }
     }
     DBGLN("");
 
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
     digitalWrite(PIN_CS, HIGH);
-    delay(100);
-
-    pinMode(PIN_MOSI, INPUT);
-    pinMode(PIN_CLK, INPUT);
-    pinMode(PIN_CS, INPUT);
+    digitalWrite(PIN_CLK, LOW);
+    delayMicroseconds(1000);
 }
 
 // CRC function for IMRC rapidfire API
