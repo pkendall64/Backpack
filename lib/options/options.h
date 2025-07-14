@@ -7,6 +7,7 @@ extern const char PROGMEM compile_options[];
 
 enum device_type_e
 {
+    DEVICE_NONE,
     DEVICE_RAPIDFIRE,
     DEVICE_RX5808,
     DEVICE_STEADYVIEW,
@@ -25,6 +26,7 @@ typedef struct {
     char    home_wifi_password[65];
     char    product_name[65];
     device_type_e     deviceType;
+    bool hasHeadTracker;
 } firmware_options_t;
 
 constexpr size_t ELRSOPTS_OPTIONS_SIZE = 512;

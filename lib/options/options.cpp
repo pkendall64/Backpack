@@ -53,6 +53,8 @@ void saveOptions(Stream &stream, bool customised)
     }
     doc["product-name"] = firmwareOptions.product_name;
     doc["flash-discriminator"] = flash_discriminator;
+    doc["device-type"] = firmwareOptions.deviceType;
+    doc["has-head-tracker"] = firmwareOptions.hasHeadTracker;
 
     serializeJson(doc, stream);
 }
@@ -139,6 +141,9 @@ static void options_LoadFromFlashOrFile(EspFlashStream &strmFlash)
     strlcpy(firmwareOptions.home_wifi_password, doc["wifi-password"] | "", sizeof(firmwareOptions.home_wifi_password));
     strlcpy(firmwareOptions.product_name, doc["product-name"] | "", sizeof(firmwareOptions.product_name));
     flash_discriminator = doc["flash-discriminator"] | 0U;
+    firmwareOptions.deviceType = doc["device-type"] | DEVICE_NONE;
+    firmwareOptions.hasHeadTracker = doc["has-head-tracker"] | false;
+    doc["has-head-tracker"] = firmwareOptions.hasHeadTracker;
 
     builtinOptions.clear();
     saveOptions(builtinOptions, doc["customised"] | false);

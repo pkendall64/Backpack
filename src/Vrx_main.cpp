@@ -57,11 +57,11 @@ bool gotInitialPacket = false;
 bool headTrackingEnabled = false;
 uint32_t lastSentRequest = 0;
 
-device_t *ui_devices[] = {
-  &LED_device,
-  &Button_device,
-  &WIFI_device,
-  &HeadTracker_device
+device_affinity_t ui_devices[] = {
+  {&LED_device, 1},
+  {&Button_device, 1},
+  {&WIFI_device, 1},
+  {&HeadTracker_device, 1},
 };
 
 #if defined(PLATFORM_ESP32)
@@ -431,7 +431,8 @@ void setup()
   config.SetStorageProvider(&eeprom);
   config.Load();
 
-  devicesInit(ui_devices, ARRAY_SIZE(ui_devices));
+  devicesRegister(ui_devices, ARRAY_SIZE(ui_devices));
+  devicesInit();
 
   #ifdef DEBUG_ELRS_WIFI
     config.SetStartWiFiOnBoot(true);
@@ -442,7 +443,7 @@ void setup()
     config.SetStartWiFiOnBoot(false);
     config.Commit();
     connectionState = wifiUpdate;
-    devicesTriggerEvent();
+    devicesTriggerEvent(EVENT_CONNECTION_CHANGED);
   }
   else
   {
