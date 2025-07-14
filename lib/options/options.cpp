@@ -166,7 +166,7 @@ bool options_init()
     options_LoadFromFlashOrFile(strmFlash);
 
     // hardware.json
-    // bool hasHardware = hardware_init(strmFlash);
+    const bool hasHardware = hardware_init(strmFlash);
 
-    return true; //hasHardware;
+    return hasHardware;
 }

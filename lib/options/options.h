@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 
 extern const unsigned char target_name[];
 extern const uint8_t target_name_size;
@@ -26,6 +27,13 @@ typedef struct {
     device_type_e     deviceType;
 } firmware_options_t;
 
+constexpr size_t ELRSOPTS_OPTIONS_SIZE = 512;
+
 extern firmware_options_t firmwareOptions;
 
 extern bool options_init();
+
+#include "EspFlashStream.h"
+bool options_HasStringInFlash(EspFlashStream &strmFlash);
+void options_SetTrueDefaults();
+bool hardware_init(EspFlashStream &strmFlash);

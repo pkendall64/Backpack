@@ -15,7 +15,7 @@
 #include "logging.h"
 #include "helpers.h"
 #include "common.h"
-#include "options.h"
+#include "../lib/options/options.h"
 #include "config.h"
 #include "crsf_protocol.h"
 
