@@ -40,14 +40,10 @@ unsigned long rebootTime = 0;
 bool cacheFull = false;
 bool sendCached = false;
 
-device_t *ui_devices[] = {
-#ifdef PIN_LED
-  &LED_device,
-#endif
-#ifdef PIN_BUTTON
-  &Button_device,
-#endif
-  &WIFI_device,
+device_affinity_t ui_devices[] = {
+  {&LED_device, 1},
+  {&Button_device, 1},
+  {&WIFI_device, 1}
 };
 
 /////////// CLASS OBJECTS ///////////
@@ -373,7 +369,8 @@ void setup()
   config.SetStorageProvider(&eeprom);
   config.Load();
 
-  devicesInit(ui_devices, ARRAY_SIZE(ui_devices));
+  devicesRegister(ui_devices, ARRAY_SIZE(ui_devices));
+  devicesInit();
 
   #ifdef DEBUG_ELRS_WIFI
     config.SetStartWiFiOnBoot(true);
@@ -389,7 +386,7 @@ void setup()
       config.Commit();
     }
     connectionState = wifiUpdate;
-    devicesTriggerEvent();
+    devicesTriggerEvent(EVENT_CONNECTION_CHANGED);
   }
   else
   {

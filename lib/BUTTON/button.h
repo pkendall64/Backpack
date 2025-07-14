@@ -1,8 +1,5 @@
 #pragma once
 
-#include <functional>
-
-template <uint8_t PIN, bool IDLELOW>
 class Button
 {
 private:
@@ -17,6 +14,8 @@ private:
     static constexpr unsigned STATE_HELD = 0b000;
 
     // State
+    uint8_t _pin;
+    bool _idlelow;
     uint32_t _lastCheck;  // millis of last pin read
     uint32_t _lastFallingEdge; // millis of last debounced falling edge
     uint8_t _state; // pin history
@@ -25,8 +24,8 @@ private:
     uint8_t _pressCount; // number of short presses before timeout
 public:
     // Callbacks
-    std::function<void ()>OnShortPress;
-    std::function<void ()>OnLongPress;
+    void (*OnShortPress)();
+    void (*OnLongPress)();
     // Properties
     uint8_t getCount() const { return _pressCount; }
     uint8_t getLongCount() const { return _longCount; }
@@ -35,7 +34,13 @@ public:
         _lastCheck(0), _lastFallingEdge(0), _state(STATE_IDLE),
         _isLongPress(false), _longCount(0), _pressCount(0)
     {
-        pinMode(PIN, IDLELOW ? INPUT : INPUT_PULLUP);
+    }
+
+    void init(uint8_t pin, bool idlelow)
+    {
+        _pin = pin;
+        _idlelow = idlelow,
+        pinMode(_pin, _idlelow ? INPUT : INPUT_PULLUP);
     }
 
     // Call this in loop()
@@ -48,14 +53,14 @@ public:
             _pressCount = 0;
 
         _state = (_state << 1) & 0b110;
-        _state |= digitalRead(PIN) ^ IDLELOW;
+        _state |= digitalRead(_pin) ^ _idlelow;
 
         // If rising edge (release)
         if (_state == STATE_RISE)
         {
             if (!_isLongPress)
             {
-                DBGLN("Button short");
+                DBGVLN("Button short");
                 ++_pressCount;
                 if (OnShortPress)
                     OnShortPress();
@@ -73,7 +78,7 @@ public:
         {
             if (now - _lastFallingEdge > MS_LONG)
             {
-                DBGLN("Button long %d", _longCount);
+                DBGVLN("Button long %d", _longCount);
                 _isLongPress = true;
                 if (OnLongPress)
                     OnLongPress();

@@ -1,13 +1,14 @@
 #include <Arduino.h>
+
 #include "common.h"
 #include "device.h"
 #include "config.h"
-
-#if defined(PIN_BUTTON)
 #include "logging.h"
-#include "button.h"
 
-static Button<PIN_BUTTON, false> button;
+#include "button.h"
+#include "hardware.h"
+
+static Button button;
 
 extern unsigned long rebootTime;
 void RebootIntoWifi(wifi_service_t service);
@@ -24,9 +25,15 @@ static void shortPress()
     }
 }
 
-static void initialize()
+static bool initialize()
 {
+    if (GPIO_PIN_BUTTON == UNDEF_PIN)
+    {
+        return false;
+    }
+    button.init(GPIO_PIN_BUTTON, false);
     button.OnShortPress = shortPress;
+    return true;
 }
 
 static int start()
@@ -42,8 +49,6 @@ static int timeout()
 device_t Button_device = {
     .initialize = initialize,
     .start = start,
-    .event = NULL,
+    .event = nullptr,
     .timeout = timeout
 };
-
-#endif
