@@ -1,4 +1,3 @@
-#if defined(AAT_BACKPACK)
 #include "common.h"
 #include "module_aat.h"
 #include "logging.h"
@@ -673,4 +672,3 @@ void AatModule::Loop(uint32_t now)
 
     CrsfModuleBase::Loop(now);
 }
-#endif /* AAT_BACKPACK */

@@ -1,6 +1,5 @@
 #pragma once
 
-#if defined(AAT_BACKPACK)
 #include "config.h"
 #include "module_crsf.h"
 #include "crsf_protocol.h"
@@ -121,7 +120,3 @@ private:
     uint32_t _lastDisplayActiveMs;
 #endif
 };
-
-extern AatModule vrxModule;
-
-#endif /* AAT_BACKPACK */

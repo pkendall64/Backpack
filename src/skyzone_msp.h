@@ -5,21 +5,12 @@
 #include "module_base.h"
 #include <Arduino.h>
 
-#define VRX_BOOT_DELAY              2000
-
-#define VRX_RESPONSE_TIMEOUT        500
-#define VRX_UART_BAUD               115200  // skyzone uses 115k baud between the ESP32-PICO and their MCU
-
-#define CHANNEL_INDEX_UNKNOWN       255
-#define VRX_DVR_RECORDING_ACTIVE    1
-#define VRX_DVR_RECORDING_INACTIVE  0
-#define VRX_DVR_RECORDING_UNKNOWN   255
-
 class SkyzoneMSP : public MSPModuleBase
 {
 public:
     SkyzoneMSP(Stream *port) : MSPModuleBase(port) {};
     void Init();
+    int BootDelay() { return 2000; }
     void SendIndexCmd(uint8_t index);
     uint8_t GetChannelIndex();
     void SetChannelIndex(uint8_t index);

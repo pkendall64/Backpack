@@ -174,7 +174,6 @@ VrxBackpackConfig::SetDefaults()
     memset(&m_config, 0, sizeof(m_config));
     m_config.version = VRX_BACKPACK_CONFIG_VERSION | VRX_BACKPACK_CONFIG_MAGIC;
 
-#if defined(AAT_BACKPACK)
     m_config.aat.satelliteHomeMin = 5;
     m_config.aat.project = 0xff;
     m_config.aat.servoSmooth = 5;
@@ -187,7 +186,6 @@ VrxBackpackConfig::SetDefaults()
 
     m_config.vbat.scale = 292;
     m_config.vbat.offset = -2;
-#endif
 
     m_modified = true;
     Commit();
@@ -228,7 +226,6 @@ VrxBackpackConfig::SetStartWiFiOnBoot(bool startWifi)
     m_modified = true;
 }
 
-#if defined(HAS_HEADTRACKING)
 void
 VrxBackpackConfig::SetCompassCalibration(const int calibrationData[3][2])
 {
@@ -249,9 +246,6 @@ VrxBackpackConfig::SetBoardOrientation(const float orientation[3])
     memcpy(m_config.boardOrientation, orientation, sizeof(m_config.boardOrientation));
     m_modified = true;
 }
-#endif
-
-#if defined(AAT_BACKPACK)
 
 void
 VrxBackpackConfig::SetAatServoSmooth(uint8_t val)
@@ -316,8 +310,6 @@ VrxBackpackConfig::GetAatServoEndpointsValid() const
     return (m_config.aat.servoEndpoints[0].low != m_config.aat.servoEndpoints[0].high)
         && (m_config.aat.servoEndpoints[1].low != m_config.aat.servoEndpoints[1].high);
 }
-
-#endif /* defined(AAT_BACKPACK) */
 
 #endif /* TARGET_VRX_BACKPACK */
 

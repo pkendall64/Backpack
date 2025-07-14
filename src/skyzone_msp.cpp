@@ -2,10 +2,18 @@
 #include "logging.h"
 #include <Arduino.h>
 
+#define VRX_RESPONSE_TIMEOUT        500
+
+#define CHANNEL_INDEX_UNKNOWN       255
+#define VRX_DVR_RECORDING_ACTIVE    1
+#define VRX_DVR_RECORDING_INACTIVE  0
+#define VRX_DVR_RECORDING_UNKNOWN   255
+
 void
 SkyzoneMSP::Init()
 {
     ModuleBase::Init();
+    Serial.begin(115200);
     m_delay = 0;
 }
 

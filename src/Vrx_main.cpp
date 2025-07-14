@@ -25,39 +25,21 @@
 #include "devLED.h"
 #include "devHeadTracker.h"
 
-#ifdef RAPIDFIRE_BACKPACK
-  #include "rapidfire.h"
-#elif defined(RX5808_BACKPACK)
-  #include "rx5808.h"
-#elif defined(STEADYVIEW_BACKPACK)
-  #include "steadyview.h"
-#elif defined(FUSION_BACKPACK)
-  #include "tbs_fusion.h"
-#elif defined(HDZERO_BACKPACK)
-  #include "hdzero.h"
-#elif defined(SKYZONE_MSP_BACKPACK)
-  #include "skyzone_msp.h"
-#elif defined(ORQA_BACKPACK)
-  #include "orqa.h"
-#elif defined(AAT_BACKPACK)
-  #include "module_aat.h"
-#elif defined(CROSSBOW_BACKPACK)
-  #include "mfd_crossbow.h"
-#endif
+ #include "rapidfire.h"
+ #include "rx5808.h"
+ #include "steadyview.h"
+ #include "tbs_fusion.h"
+ #include "hdzero.h"
+ #include "skyzone_msp.h"
+ #include "orqa.h"
+ #include "module_aat.h"
+ #include "mfd_crossbow.h"
 
 /////////// DEFINES ///////////
 
 #define BINDING_TIMEOUT     30000
 #define NO_BINDING_TIMEOUT  120000
 #define BINDING_LED_PAUSE   1000
-
-#if !defined(VRX_BOOT_DELAY)
-  #define VRX_BOOT_DELAY  0
-#endif
-
-#if !defined(VRX_UART_BAUD)
-  #define VRX_UART_BAUD  460800
-#endif
 
 /////////// GLOBALS ///////////
 
@@ -83,9 +65,7 @@ device_t *ui_devices[] = {
   &Button_device,
 #endif
   &WIFI_device,
-#ifdef HAS_HEADTRACKING
   &HeadTracker_device
-#endif
 };
 
 #if defined(PLATFORM_ESP32)
@@ -105,26 +85,7 @@ MSP msp;
 
 ELRS_EEPROM eeprom;
 VrxBackpackConfig config;
-
-#ifdef RAPIDFIRE_BACKPACK
-  Rapidfire vrxModule;
-#elif defined(RX5808_BACKPACK)
-  RX5808 vrxModule;
-#elif defined(STEADYVIEW_BACKPACK)
-  SteadyView vrxModule;
-#elif defined(FUSION_BACKPACK)
-  Fusion vrxModule;
-#elif defined(HDZERO_BACKPACK)
-  HDZero vrxModule(&Serial);
-#elif defined(SKYZONE_MSP_BACKPACK)
-  SkyzoneMSP vrxModule(&Serial);
-#elif defined(ORQA_BACKPACK)
-  Orqa vrxModule;
-#elif defined(AAT_BACKPACK)
-  AatModule vrxModule(Serial);
-#elif defined(CROSSBOW_BACKPACK)
-  MFDCrossbow vrxModule(&Serial);
-#endif
+ModuleBase *vrxModule;
 
 /////////// FUNCTION DEFS ///////////
 
@@ -238,12 +199,12 @@ void ProcessMSPPacket(mspPacket_t *packet)
       uint8_t lowByte = packet->readByte();
       uint8_t highByte = packet->readByte();
       uint16_t delay = lowByte | highByte << 8;
-      vrxModule.SetRecordingState(state, delay);
+      vrxModule->SetRecordingState(state, delay);
     }
     break;
   case MSP_ELRS_SET_OSD:
     DBGLN("Processing MSP_ELRS_SET_OSD...");
-    vrxModule.SetOSD(packet);
+    vrxModule->SetOSD(packet);
     break;
   case MSP_ELRS_BACKPACK_SET_HEAD_TRACKING:
     DBGLN("Processing MSP_ELRS_BACKPACK_SET_HEAD_TRACKING...");
@@ -262,13 +223,13 @@ void ProcessMSPPacket(mspPacket_t *packet)
     }
     switch (packet->payload[2]) {
     case CRSF_FRAMETYPE_GPS:
-      vrxModule.SendGpsTelemetry((crsf_packet_gps_t *)packet->payload);
+      vrxModule->SendGpsTelemetry((crsf_packet_gps_t *)packet->payload);
       break;
     case CRSF_FRAMETYPE_BATTERY_SENSOR:
-      vrxModule.SendBatteryTelemetry(packet->payload);
+      vrxModule->SendBatteryTelemetry(packet->payload);
       break;
     case CRSF_FRAMETYPE_LINK_STATISTICS:
-      vrxModule.SendLinkTelemetry(packet->payload);
+      vrxModule->SendLinkTelemetry(packet->payload);
       break;
     }
     break;
@@ -341,16 +302,17 @@ void SetSoftMACAddress()
 
 void RequestVTXPacket()
 {
-#if !defined(AAT_BACKPACK) and !defined(CROSSBOW_BACKPACK)
-  mspPacket_t packet;
-  packet.reset();
-  packet.makeCommand();
-  packet.function = MSP_ELRS_REQU_VTX_PKT;
-  packet.addByte(0);  // empty byte
+  if (firmwareOptions.deviceType != DEVICE_DIY_AAT && firmwareOptions.deviceType != DEVICE_MFD_CROSSBOW)
+  {
+    mspPacket_t packet;
+    packet.reset();
+    packet.makeCommand();
+    packet.function = MSP_ELRS_REQU_VTX_PKT;
+    packet.addByte(0);  // empty byte
 
-  blinkLED();
-  sendMSPViaEspnow(&packet);
-#endif
+    blinkLED();
+    sendMSPViaEspnow(&packet);
+  }
 }
 
 void sendMSPViaEspnow(mspPacket_t *packet)
@@ -435,14 +397,39 @@ RF_PRE_INIT()
 
 void setup()
 {
-  #if !defined(HDZERO_BACKPACK)
-    // Serial.begin() seems to prevent the HDZ VRX from booting
-    // If we're not on HDZ, init serial early for debug msgs
-    // Otherwise, delay it till the end of setup
-    Serial.begin(VRX_UART_BAUD);
-  #endif
-
   options_init();
+
+  vrxModule = new HDZero(&Serial);
+  switch (firmwareOptions.deviceType)
+  {
+    case DEVICE_RAPIDFIRE:
+      vrxModule = new Rapidfire;
+      break;
+    case DEVICE_RX5808:
+      vrxModule = new RX5808();
+      break;
+    case DEVICE_STEADYVIEW:
+      vrxModule = new SteadyView;
+      break;
+    case DEVICE_FUSION:
+      vrxModule = new Fusion;
+      break;
+    case DEVICE_HDZERO:
+      vrxModule = new HDZero(&Serial);
+      break;
+    case DEVICE_SKYZONE_MSP:
+      vrxModule = new SkyzoneMSP(&Serial);
+      break;
+    case DEVICE_ORQA:
+      vrxModule = new Orqa;
+      break;
+    case DEVICE_DIY_AAT:
+      vrxModule = new AatModule(Serial);
+      break;
+    case DEVICE_MFD_CROSSBOW:
+      vrxModule = new MFDCrossbow(&Serial);
+      break;
+  }
 
   eeprom.Begin();
   config.SetStorageProvider(&eeprom);
@@ -476,10 +463,9 @@ void setup()
     connectionState = running;
   }
 
-  vrxModule.Init();
-  #if defined(HDZERO_BACKPACK)
-    Serial.begin(VRX_UART_BAUD);
-  #endif
+  Serial.begin(460800);
+  vrxModule->Init();
+
   DBGLN("Setup completed");
 }
 
@@ -488,7 +474,7 @@ void loop()
   uint32_t now = millis();
 
   devicesUpdate(now);
-  vrxModule.Loop(now);
+  vrxModule->Loop(now);
 
   #if defined(PLATFORM_ESP8266)
     if (rebootTime != 0 && now > rebootTime)
@@ -517,12 +503,12 @@ void loop()
   if (sendChannelChangesToVrx)
   {
     sendChannelChangesToVrx = false;
-    vrxModule.SendIndexCmd(cachedIndex);
+    vrxModule->SendIndexCmd(cachedIndex);
   }
   if (sendHeadTrackingChangesToVrx)
   {
     sendHeadTrackingChangesToVrx = false;
-    vrxModule.SendHeadTrackingEnableCmd(headTrackingEnabled);
+    vrxModule->SendHeadTrackingEnableCmd(headTrackingEnabled);
   }
 
 #if !defined(NO_AUTOBIND)
@@ -539,13 +525,13 @@ void loop()
     if (sendRTCChangesToVrx)
     {
       sendRTCChangesToVrx = false;
-      vrxModule.SetRTC();
+      vrxModule->SetRTC();
     }
     return;
   }
 
   // spam out a bunch of requests for the desired band/channel for the first 5s
-  if (!gotInitialPacket && now - VRX_BOOT_DELAY < 5000 && now - lastSentRequest > 1000 && connectionState != binding)
+  if (!gotInitialPacket && now - vrxModule->BootDelay() < 5000 && now - lastSentRequest > 1000 && connectionState != binding)
   {
     DBGLN("RequestVTXPacket...");
     RequestVTXPacket();

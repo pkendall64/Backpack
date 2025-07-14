@@ -1,18 +1,6 @@
 #pragma once
 
 #include "module_base.h"
-#include "msptypes.h"
-
-#define VRX_UART_BAUD           115200
-
-#define MAVLINK_SYSTEM_ID       1
-#define MAVLINK_COMPONENT_ID    1
-#define MAVLINK_SYSTEM_TYPE     1
-#define MAVLINK_AUTOPILOT_TYPE  3
-#define MAVLINK_SYSTEM_MODE     64
-#define MAVLINK_CUSTOM_MODE     0
-#define MAVLINK_SYSTEM_STATE    4
-#define MAVLINK_UPTIME          0
 
 class MFDCrossbow : public ModuleBase
 {

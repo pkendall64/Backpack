@@ -20,46 +20,6 @@ extern bool headTrackingEnabled;
 void sendMSPViaEspnow(mspPacket_t *packet);
 
 void
-ModuleBase::Init()
-{
-}
-
-void
-ModuleBase::SendIndexCmd(uint8_t index)
-{
-}
-
-void
-ModuleBase::SetRecordingState(uint8_t recordingState, uint16_t delay)
-{
-}
-
-void
-ModuleBase::SetOSD(mspPacket_t *packet)
-{
-}
-
-void
-ModuleBase::SendHeadTrackingEnableCmd(bool enable)
-{
-}
-
-void
-ModuleBase::SetRTC()
-{
-}
-
-void
-ModuleBase::SendLinkTelemetry(uint8_t *rawCrsfPacket)
-{
-}
-
-void
-ModuleBase::SendBatteryTelemetry(uint8_t *rawCrsfPacket)
-{
-}
-
-void
 ModuleBase::Loop(uint32_t now)
 {
 #if defined(HAS_HEADTRACKING)
@@ -109,6 +69,7 @@ MSPModuleBase::Loop(uint32_t now)
         isBinding = false;
         sendResponse(MSP_ELRS_BACKPACK_SET_MODE, (const uint8_t *)"O", 1); // OK
     }
+    ModuleBase::Loop(now);
 
     while (m_port->available())
     {
