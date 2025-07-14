@@ -1,6 +1,15 @@
 #include "mfd_crossbow.h"
 #include "common/mavlink.h"
 
+#define MAVLINK_SYSTEM_ID       1
+#define MAVLINK_COMPONENT_ID    1
+#define MAVLINK_SYSTEM_TYPE     1
+#define MAVLINK_AUTOPILOT_TYPE  3
+#define MAVLINK_SYSTEM_MODE     64
+#define MAVLINK_CUSTOM_MODE     0
+#define MAVLINK_SYSTEM_STATE    4
+#define MAVLINK_UPTIME          0
+
 MFDCrossbow::MFDCrossbow(HardwareSerial *port) :
     m_port(port),
     gpsLastSent(0),
@@ -15,6 +24,7 @@ MFDCrossbow::MFDCrossbow(HardwareSerial *port) :
     gps_hdop(100),
     fixType(3)
 {
+    port->begin(115200);
 }
 
 void

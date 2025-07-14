@@ -1,6 +1,15 @@
 #include "orqa.h"
+#include "crc.h"
+#include "channels.h"
+
+#define GHST_CRC_POLY   0xD5
 
 GENERIC_CRC8 ghst_crc(GHST_CRC_POLY);
+
+void Orqa::Init()
+{
+    Serial.begin(100000);
+}
 
 void Orqa::SendIndexCmd(uint8_t index)
 {

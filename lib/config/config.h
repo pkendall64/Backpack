@@ -87,12 +87,9 @@ typedef struct {
     char        ssid[33];
     char        password[65];
     uint8_t     address[6];
-#if defined(HAS_HEADTRACKING)
     int         compassCalibration[3][2];
     float       imuCalibration[3];
     float       boardOrientation[3];
-#endif
-#if defined(AAT_BACKPACK)
     struct __attribute__((packed)) tagAatConfig {
         uint8_t     satelliteHomeMin;     // minimum number of satellites to establish home
         uint8_t     azimuthServoFastFlip; // 0=off, 1=on
@@ -112,7 +109,6 @@ typedef struct {
         uint16_t scale;
         int16_t offset;
     } vbat;
-#endif
 } vrx_backpack_config_t;
 
 class VrxBackpackConfig
@@ -138,7 +134,6 @@ public:
     void SetPassword(const char *ssid);
     void SetGroupAddress(const uint8_t address[6]);
 
-#if defined(HAS_HEADTRACKING)
     int     (*GetCompassCalibration())[3][2] { return &m_config.compassCalibration; }
     float   (*GetIMUCalibration())[3] { return &m_config.imuCalibration; }
     float   (*GetBoardOrientation())[3] { return &m_config.boardOrientation; }
@@ -146,9 +141,7 @@ public:
     void SetCompassCalibration(const int calibration[3][2]);
     void SetIMUCalibration(const float calibration[3]);
     void SetBoardOrientation(const float orientation[3]);
-#endif
 
-#if defined(AAT_BACKPACK)
     uint8_t GetAatSatelliteHomeMin() const { return m_config.aat.satelliteHomeMin; }
     void SetAatSatelliteHomeMin(uint8_t val);
     uint8_t GetAatAzimuthServoFastFlip() const { return m_config.aat.azimuthServoFastFlip; }
@@ -170,7 +163,6 @@ public:
     void SetVbatScale(uint16_t val);
     int16_t GetVbatOffset() const { return m_config.vbat.offset; }
     void SetVbatOffset(int16_t val);
-#endif
 
 private:
     vrx_backpack_config_t   m_config;

@@ -1,8 +1,9 @@
+#include <Arduino.h>
 #include "tbs_fusion.h"
 #include "logging.h"
 #include "crc.h"
 #include "crsf_protocol.h"
-#include <Arduino.h>
+#include "channels.h"
 
 GENERIC_CRC8 crsf_crc(CRSF_CRC_POLY);
 
@@ -10,6 +11,7 @@ void
 Fusion::Init()
 {
     ModuleBase::Init();
+    Serial.begin(500000);
     DBGLN("Fusion backpack init complete");
 }
 

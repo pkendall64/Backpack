@@ -2,12 +2,21 @@
 #include <SPI.h>
 #include "logging.h"
 
+#define BIT_BANG_FREQ       1000
+#define SPAM_COUNT          3
+
+#define RF_API_DIR_GRTHAN   0x3E    // '>'
+#define RF_API_DIR_EQUAL    0x3D    // '='
+#define RF_API_BEEP_CMD     0x53    // 'S'
+#define RF_API_CHANNEL_CMD  0x43    // 'C'
+#define RF_API_BAND_CMD     0x42    // 'B'
+
 void
 Rapidfire::Init()
 {
     ModuleBase::Init();
 
-    delay(VRX_BOOT_DELAY);
+    delay(2000);
     EnableSPIMode(); // https://github.com/ExpressLRS/ExpressLRS/pull/1489 & https://github.com/ExpressLRS/Backpack/pull/65
 
     pinMode(PIN_MOSI, INPUT);
