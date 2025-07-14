@@ -621,7 +621,7 @@ static void WebUpdateSetMavLink(AsyncWebServerRequest *request)
 }
 #endif
 
-static void wifiOff()
+static bool wifiOff()
 {
   wifiStarted = false;
   WiFi.disconnect(true);
@@ -629,6 +629,7 @@ static void wifiOff()
   #if defined(PLATFORM_ESP8266)
   WiFi.forceSleepBegin();
   #endif
+  return true;
 }
 
 static void startWiFi(unsigned long now)

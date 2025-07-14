@@ -58,12 +58,8 @@ bool headTrackingEnabled = false;
 uint32_t lastSentRequest = 0;
 
 device_t *ui_devices[] = {
-#ifdef PIN_LED
   &LED_device,
-#endif
-#ifdef PIN_BUTTON
   &Button_device,
-#endif
   &WIFI_device,
   &HeadTracker_device
 };

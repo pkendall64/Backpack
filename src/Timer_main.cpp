@@ -46,12 +46,8 @@ bool espnowCTS = true;
 bool sendSuccess = false;
 
 device_t *ui_devices[] = {
-#ifdef PIN_LED
   &LED_device,
-#endif
-#ifdef PIN_BUTTON
   &Button_device,
-#endif
   &WIFI_device,
 };
 
