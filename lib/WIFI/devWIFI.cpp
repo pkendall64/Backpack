@@ -25,7 +25,7 @@
 
 #include "common.h"
 #include "logging.h"
-#include "options.h"
+#include "../options/options.h"
 #include "helpers.h"
 
 #include "UpdateWrapper.h"

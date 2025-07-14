@@ -1,16 +1,14 @@
 #include "module_base.h"
 
 #include "common.h"
-#include "options.h"
+#include "../lib/options/options.h"
 #include "device.h"
 #include "msptypes.h"
 #include "logging.h"
 #include <config.h>
 
-#if defined(HAS_HEADTRACKING)
 #include "devHeadTracker.h"
 #include "crsf_protocol.h"
-#endif
 
 int16_t ptrChannelData[3];
 void RebootIntoWifi(wifi_service_t service = WIFI_SERVICE_UPDATE);
