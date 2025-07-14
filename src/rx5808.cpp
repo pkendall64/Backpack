@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include "logging.h"
 #include "channels.h"
+#include "hardware.h"
 
 #define BIT_BANG_FREQ                               10000
 
@@ -29,32 +30,33 @@ RX5808::Init()
 {
     ModuleBase::Init();
     
-    pinMode(PIN_MOSI, INPUT);
-    pinMode(PIN_CLK, INPUT);
-    pinMode(PIN_CS, INPUT);
+    pinMode(GPIO_PIN_MOSI, INPUT);
+    pinMode(GPIO_PIN_CLK, INPUT);
+    pinMode(GPIO_PIN_CS, INPUT);
 
-    #if defined(PIN_CS_2)
-        pinMode(PIN_CS_2, INPUT);
-    #endif
+    if (GPIO_PIN_CS_2 != UNDEF_PIN)
+    {
+        pinMode(GPIO_PIN_CS_2, INPUT);
+    }
 
     DBGLN("RX5808 init complete");
 }
 
 void
-RX5808::EnableSPIMode()
-{
-    pinMode(PIN_MOSI, OUTPUT);
-    pinMode(PIN_CLK, OUTPUT);
-    pinMode(PIN_CS, OUTPUT);
+RX5808::EnableSPIMode() {
+    pinMode(GPIO_PIN_MOSI, OUTPUT);
+    pinMode(GPIO_PIN_CLK, OUTPUT);
+    pinMode(GPIO_PIN_CS, OUTPUT);
 
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
-    digitalWrite(PIN_CS, HIGH);
+    digitalWrite(GPIO_PIN_MOSI, LOW);
+    digitalWrite(GPIO_PIN_CLK, LOW);
+    digitalWrite(GPIO_PIN_CS, HIGH);
 
-    #if defined(PIN_CS_2)
-        pinMode(PIN_CS_2, OUTPUT);
-        digitalWrite(PIN_CS_2, HIGH);
-    #endif
+    if (GPIO_PIN_CS_2 != UNDEF_PIN)
+    {
+        pinMode(GPIO_PIN_CS_2, OUTPUT);
+        digitalWrite(GPIO_PIN_CS_2, HIGH);
+    }
 
     SPIModeEnabled = true;
 
@@ -91,32 +93,34 @@ RX5808::rtc6705WriteRegister(uint32_t buf)
 
     uint32_t periodMicroSec = 1000000 / BIT_BANG_FREQ;
 
-    digitalWrite(PIN_CS, LOW);
-    #if defined(PIN_CS_2)
-        digitalWrite(PIN_CS_2, LOW);
-    #endif
+    digitalWrite(GPIO_PIN_CS, LOW);
+    if (GPIO_PIN_CS_2 != UNDEF_PIN)
+    {
+        digitalWrite(GPIO_PIN_CS_2, LOW);
+    }
     delayMicroseconds(periodMicroSec);
 
     for (uint8_t i = 0; i < RX5808_PACKET_LENGTH; ++i)
     {
-        digitalWrite(PIN_CLK, LOW);
+        digitalWrite(GPIO_PIN_CLK, LOW);
         delayMicroseconds(periodMicroSec / 4);
-        digitalWrite(PIN_MOSI, buf & 0x01);
+        digitalWrite(GPIO_PIN_MOSI, buf & 0x01);
         delayMicroseconds(periodMicroSec / 4);
-        digitalWrite(PIN_CLK, HIGH);
+        digitalWrite(GPIO_PIN_CLK, HIGH);
         delayMicroseconds(periodMicroSec / 2);
 
         buf >>= 1; 
     }
 
-    digitalWrite(PIN_CLK, LOW);
+    digitalWrite(GPIO_PIN_CLK, LOW);
     delayMicroseconds(periodMicroSec);
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
-    digitalWrite(PIN_CS, HIGH);
-    #if defined(PIN_CS_2)
-        digitalWrite(PIN_CS_2, HIGH);
-    #endif
+    digitalWrite(GPIO_PIN_MOSI, LOW);
+    digitalWrite(GPIO_PIN_CLK, LOW);
+    digitalWrite(GPIO_PIN_CS, HIGH);
+    if (GPIO_PIN_CS_2 != UNDEF_PIN)
+    {
+        digitalWrite(GPIO_PIN_CS_2, HIGH);
+    }
 }
 
 uint32_t
@@ -132,47 +136,47 @@ RX5808::rtc6705readRegister(uint8_t readRegister)
 
     uint32_t periodMicroSec = 1000000 / BIT_BANG_FREQ;
 
-    digitalWrite(PIN_CS, LOW);
+    digitalWrite(GPIO_PIN_CS, LOW);
     delayMicroseconds(periodMicroSec);
 
     // Write register address and read bit
     for (uint8_t i = 0; i < RX5808_ADDRESS_R_W_LENGTH; ++i)
     {
-        digitalWrite(PIN_CLK, LOW);
+        digitalWrite(GPIO_PIN_CLK, LOW);
         delayMicroseconds(periodMicroSec / 4);
-        digitalWrite(PIN_MOSI, buf & 0x01);
+        digitalWrite(GPIO_PIN_MOSI, buf & 0x01);
         delayMicroseconds(periodMicroSec / 4);
-        digitalWrite(PIN_CLK, HIGH);
+        digitalWrite(GPIO_PIN_CLK, HIGH);
         delayMicroseconds(periodMicroSec / 2);
 
         buf >>= 1; 
     }
 
     // Change pin from output to input
-    pinMode(PIN_MOSI, INPUT);
+    pinMode(GPIO_PIN_MOSI, INPUT);
 
     // Read data 20 bits
     for (uint8_t i = 0; i < RX5808_DATA_LENGTH; i++)
     {
-        digitalWrite(PIN_CLK, LOW);
+        digitalWrite(GPIO_PIN_CLK, LOW);
         delayMicroseconds(periodMicroSec / 4);
 
-        if (digitalRead(PIN_MOSI))
+        if (digitalRead(GPIO_PIN_MOSI))
         {
             registerData = registerData | (1 << (5 + i));
         }
 
         delayMicroseconds(periodMicroSec / 4);
-        digitalWrite(PIN_CLK, HIGH);
+        digitalWrite(GPIO_PIN_CLK, HIGH);
         delayMicroseconds(periodMicroSec / 2);
     }
 
     // Change pin back to output
-    pinMode(PIN_MOSI, OUTPUT);
+    pinMode(GPIO_PIN_MOSI, OUTPUT);
 
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
-    digitalWrite(PIN_CS, HIGH);
+    digitalWrite(GPIO_PIN_MOSI, LOW);
+    digitalWrite(GPIO_PIN_CLK, LOW);
+    digitalWrite(GPIO_PIN_CS, HIGH);
 
     return registerData;
 }

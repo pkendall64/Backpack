@@ -1,4 +1,3 @@
-#include "common.h"
 #include "module_aat.h"
 #include "logging.h"
 
@@ -9,6 +8,11 @@
 #else
 #include <ESP8266WiFi.h>
 #endif
+
+#include "common.h"
+#include "config.h"
+#include "devWIFI.h"
+#include "hardware.h"
 
 #define DEG2RAD(deg) ((deg) * M_PI / 180.0)
 #define RAD2DEG(rad) ((rad) * 180.0 / M_PI)
@@ -93,15 +97,9 @@ AatModule::AatModule(Stream &port) :
     _gpsAvgUpdateIntervalMs(0), _lastServoUpdateMs(0), _targetDistance(0),
     _targetAzim(0), _targetElev(0), _azimMsPerDegree(0),
     _servoPos{0}, _lastAzimFlipMs(0)
-#if defined(PIN_SERVO_AZIM)
     , _servo_Azim()
-#endif
-#if defined(PIN_SERVO_ELEV)
     , _servo_Elev()
-#endif
-#if defined(PIN_OLED_SDA)
     , _display(SCREEN_WIDTH, SCREEN_HEIGHT), _lastDisplayActiveMs(0)
-#endif
 {
     // Init is called manually
 }
@@ -113,16 +111,16 @@ void AatModule::Init()
     Serial.end();
 #endif
     _servoPos[IDX_AZIM] = (config.GetAatServoLow(IDX_AZIM) + config.GetAatServoHigh(IDX_AZIM)) / 2;
-#if defined(PIN_SERVO_AZIM)
-    _servo_Azim.attach(PIN_SERVO_AZIM, 500, 2500, _servoPos[IDX_AZIM]);
-#endif
+    if (GPIO_PIN_SERVO_AZIM != UNDEF_PIN)
+    {
+        _servo_Azim.attach(GPIO_PIN_SERVO_AZIM, 500, 2500, _servoPos[IDX_AZIM]);
+    }
     _servoPos[IDX_ELEV] = (config.GetAatServoLow(IDX_ELEV) + config.GetAatServoHigh(IDX_ELEV)) / 2;
-#if defined(PIN_SERVO_ELEV)
-    _servo_Elev.attach(PIN_SERVO_ELEV, 500, 2500, _servoPos[IDX_ELEV]);
-#endif
-#if defined(PIN_OLED_SDA)
+    if (GPIO_PIN_SERVO_ELEV != UNDEF_PIN)
+    {
+        _servo_Elev.attach(GPIO_PIN_SERVO_ELEV, 500, 2500, _servoPos[IDX_ELEV]);
+    }
     displayInit();
-#endif
     ModuleBase::Init();
 }
 
@@ -246,13 +244,15 @@ const int32_t AatModule::azimToBearing(int32_t azim) const
     return ((azim - center + 540) % 360) - 180;  // -180 to +179
 }
 
-#if defined(PIN_OLED_SDA)
 void AatModule::displayInit()
 {
-    Wire.begin(PIN_OLED_SDA, PIN_OLED_SCL);
-    _display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
-    _display.setTextWrap(false);
-    displayState();
+    if (GPIO_PIN_I2C_SDA != UNDEF_PIN)
+    {
+        Wire.begin(GPIO_PIN_I2C_SDA, GPIO_PIN_I2C_SCL);
+        _display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS);
+        _display.setTextWrap(false);
+        displayState();
+    }
 }
 
 void AatModule::displayState()
@@ -314,14 +314,14 @@ void AatModule::displayAzimuthExtent(int32_t y)
     {
         // Just a line on the left / right of the azim line
         default: /* fallthrough */
-        case ServoMode::TwoToOne: /* fallthrough */
-        case ServoMode::Flip180:
+        case TwoToOne: /* fallthrough */
+        case Flip180:
             _display.drawFastVLine(0, y, 5, SSD1306_WHITE);
             _display.drawFastVLine(SCREEN_WIDTH-1, y, 5, SSD1306_WHITE);
             break;
 
         // 180 mode put the lines at the extent of the servo rotation
-        case ServoMode::Clip180:
+        case Clip180:
             //_display.drawFastVLine(SCREEN_WIDTH/4, y, 5, SSD1306_WHITE);
             //_display.drawFastVLine(3*SCREEN_WIDTH/4, y, 5, SSD1306_WHITE);
             // Dotted line all the way up the elevation field
@@ -512,7 +512,6 @@ void AatModule::displayGpsIntervalBar(uint32_t now)
         _display.fillRect(SCREEN_WIDTH-pxWidth, 0, pxWidth, 2, SSD1306_WHITE);
     }
 }
-#endif /* defined(PIN_OLED_SDA) */
 
 void AatModule::servoApplyMode(int32_t azim, int32_t elev, int32_t newServoPos[])
 {
@@ -597,16 +596,18 @@ void AatModule::servoUpdate(uint32_t now)
     }
     //DBGLN("t=%u pro=%d us=%d smoo=%d", _targetAzim, projectedAzim, newServoPos[IDX_AZIM], _servoPos[IDX_AZIM]);
 
-#if defined(PIN_SERVO_AZIM)
-    _servo_Azim.writeMicroseconds(_servoPos[IDX_AZIM]);
-#endif
-#if defined(PIN_SERVO_ELEV)
-    _servo_Elev.writeMicroseconds(_servoPos[IDX_ELEV]);
-#endif
-
-#if defined(PIN_OLED_SDA)
-    displayActive(now, projectedAzim);
-#endif
+    if (GPIO_PIN_SERVO_AZIM != UNDEF_PIN)
+    {
+        _servo_Azim.writeMicroseconds(_servoPos[IDX_AZIM]);
+    }
+    if (GPIO_PIN_SERVO_ELEV != UNDEF_PIN)
+    {
+        _servo_Elev.writeMicroseconds(_servoPos[IDX_ELEV]);
+    }
+    if (GPIO_PIN_I2C_SDA != UNDEF_PIN)
+    {
+        displayActive(now, projectedAzim);
+    }
 }
 
 uint32_t AatModule::getVbat()
@@ -661,12 +662,13 @@ void AatModule::Loop(uint32_t now)
     }
     else
     {
-#if defined(PIN_OLED_SDA)
-        if (isGpsActive())
-            displayGpsIdle(now);
-        else
-            displayState();
-#endif
+        if (GPIO_PIN_I2C_SDA != UNDEF_PIN)
+        {
+            if (isGpsActive())
+                displayGpsIdle(now);
+            else
+                displayState();
+        }
         delay(DELAY_IDLE);
     }
 

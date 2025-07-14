@@ -23,8 +23,9 @@ static const struct {
     {HARDWARE_led_invert, "led_invert", BOOL},
 
     {HARDWARE_spi_cs, "spi_cs", INT},
-    {HARDWARE_spi_sck, "spi_sck", INT},
+    {HARDWARE_spi_clk, "spi_clk", INT},
     {HARDWARE_spi_mosi, "spi_mosi", INT},
+    {HARDWARE_spi_cs2, "spi_cs2", INT},
 
     {HARDWARE_i2c_scl, "i2c_scl", INT},
     {HARDWARE_i2c_sda, "i2c_sda", INT},

@@ -15,6 +15,8 @@
 #include "MPU6050.h"
 #include "QMI8658C.h"
 #include "Fusion.h"
+#include "hardware.h"
+#include "options.h"
 
 static HeadTrackerState ht_state = STATE_ERROR;
 static IMUBase *imu;
@@ -27,9 +29,13 @@ static float rollHome = 0, pitchHome = 0, yawHome = 0;
 static int calibrationData[3][2];
 static uint32_t cal_started;
 
-static void initialize()
+static bool initialize()
 {
-    Wire.begin(PIN_SDA, PIN_SCL);
+    if (!firmwareOptions.hasHeadTracker)
+    {
+        return false;
+    }
+    Wire.begin(GPIO_PIN_I2C_SDA, GPIO_PIN_I2C_SCL);
     Wire.setClock(400000);
     Wire.setTimeout(1000);
 
@@ -53,11 +59,11 @@ static void initialize()
             else {
                 delete imu;
                 ht_state = STATE_ERROR;
-                return;
+                return false;
             }
         }
     }
-    imu->setInterruptHandler(PIN_INT);
+    imu->setInterruptHandler(GPIO_PIN_I2C_INT);
 
     FusionAhrsInitialise(&ahrs);
     // Set AHRS algorithm settings
@@ -72,6 +78,7 @@ static void initialize()
     FusionAhrsSetSettings(&ahrs, &settings);
     DBGLN("starting head tracker");
     ht_state = STATE_RUNNING;
+    return true;
 }
 
 static int start()

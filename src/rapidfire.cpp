@@ -1,5 +1,7 @@
 #include "rapidfire.h"
 #include <SPI.h>
+
+#include "hardware.h"
 #include "logging.h"
 
 #define BIT_BANG_FREQ       1000
@@ -19,9 +21,9 @@ Rapidfire::Init()
     delay(2000);
     EnableSPIMode(); // https://github.com/ExpressLRS/ExpressLRS/pull/1489 & https://github.com/ExpressLRS/Backpack/pull/65
 
-    pinMode(PIN_MOSI, INPUT);
-    pinMode(PIN_CLK, INPUT);
-    pinMode(PIN_CS, INPUT);
+    pinMode(GPIO_PIN_MOSI, INPUT);
+    pinMode(GPIO_PIN_CLK, INPUT);
+    pinMode(GPIO_PIN_CS, INPUT);
 
     DBGLN("Rapid Fire init");
 }
@@ -30,19 +32,19 @@ void
 Rapidfire::EnableSPIMode()
 {
     // Set pins to output to configure rapidfire in SPI mode
-    pinMode(PIN_MOSI, OUTPUT);
-    pinMode(PIN_CLK, OUTPUT);
-    pinMode(PIN_CS, OUTPUT);
+    pinMode(GPIO_PIN_MOSI, OUTPUT);
+    pinMode(GPIO_PIN_CLK, OUTPUT);
+    pinMode(GPIO_PIN_CS, OUTPUT);
 
     // put the RF into SPI mode by pulling all 3 pins high,
     // then low within 100-400ms
-    digitalWrite(PIN_MOSI, HIGH);
-    digitalWrite(PIN_CLK, HIGH);
-    digitalWrite(PIN_CS, HIGH);
+    digitalWrite(GPIO_PIN_MOSI, HIGH);
+    digitalWrite(GPIO_PIN_CLK, HIGH);
+    digitalWrite(GPIO_PIN_CS, HIGH);
     delay(200);
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
-    digitalWrite(PIN_CS, LOW);
+    digitalWrite(GPIO_PIN_MOSI, LOW);
+    digitalWrite(GPIO_PIN_CLK, LOW);
+    digitalWrite(GPIO_PIN_CS, LOW);
     delay(200);
 
     SPIModeEnabled = true;
@@ -174,16 +176,16 @@ Rapidfire::SendSPI(uint8_t* buf, uint8_t bufLen)
 
     uint32_t periodMicroSec = 1000000 / BIT_BANG_FREQ;
 
-    pinMode(PIN_MOSI, OUTPUT);
-    pinMode(PIN_CLK, OUTPUT);
-    pinMode(PIN_CS, OUTPUT);
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
-    digitalWrite(PIN_CS, HIGH);
+    pinMode(GPIO_PIN_MOSI, OUTPUT);
+    pinMode(GPIO_PIN_CLK, OUTPUT);
+    pinMode(GPIO_PIN_CS, OUTPUT);
+    digitalWrite(GPIO_PIN_MOSI, LOW);
+    digitalWrite(GPIO_PIN_CLK, LOW);
+    digitalWrite(GPIO_PIN_CS, HIGH);
 
     delayMicroseconds(periodMicroSec);
 
-    digitalWrite(PIN_CS, LOW);
+    digitalWrite(GPIO_PIN_CS, LOW);
     delay(100);
 
     // debug code for printing SPI pkt
@@ -197,11 +199,11 @@ Rapidfire::SendSPI(uint8_t* buf, uint8_t bufLen)
         for (uint8_t k = 0; k < 8; k++)
         {
             // digitalWrite takes about 0.5us, so it is not taken into account with delays.
-            digitalWrite(PIN_CLK, LOW);
+            digitalWrite(GPIO_PIN_CLK, LOW);
             delayMicroseconds(periodMicroSec / 4);
-            digitalWrite(PIN_MOSI, bufByte & 0x80);
+            digitalWrite(GPIO_PIN_MOSI, bufByte & 0x80);
             delayMicroseconds(periodMicroSec / 4);
-            digitalWrite(PIN_CLK, HIGH);
+            digitalWrite(GPIO_PIN_CLK, HIGH);
             delayMicroseconds(periodMicroSec / 2);
 
             bufByte <<= 1;
@@ -209,14 +211,14 @@ Rapidfire::SendSPI(uint8_t* buf, uint8_t bufLen)
     }
     DBGLN("");
 
-    digitalWrite(PIN_MOSI, LOW);
-    digitalWrite(PIN_CLK, LOW);
-    digitalWrite(PIN_CS, HIGH);
+    digitalWrite(GPIO_PIN_MOSI, LOW);
+    digitalWrite(GPIO_PIN_CLK, LOW);
+    digitalWrite(GPIO_PIN_CS, HIGH);
     delay(100);
 
-    pinMode(PIN_MOSI, INPUT);
-    pinMode(PIN_CLK, INPUT);
-    pinMode(PIN_CS, INPUT);
+    pinMode(GPIO_PIN_MOSI, INPUT);
+    pinMode(GPIO_PIN_CLK, INPUT);
+    pinMode(GPIO_PIN_CS, INPUT);
 }
 
 // CRC function for IMRC rapidfire API

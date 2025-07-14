@@ -91,7 +91,7 @@ MSPModuleBase::Loop(uint32_t now)
                     {
                         DBGLN("Enter WIFI mode...");
                         connectionState = wifiUpdate;
-                        devicesTriggerEvent();
+                        devicesTriggerEvent(EVENT_CONNECTION_CHANGED);
                     }
                     // send "in-progress" response
                     sendResponse(MSP_ELRS_BACKPACK_SET_MODE, (const uint8_t *)"P", 1);

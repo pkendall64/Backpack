@@ -1,15 +1,13 @@
 #pragma once
 
-#include "config.h"
 #include "module_crsf.h"
 #include "crsf_protocol.h"
-#include "devWIFI.h"
 
-#if defined(PIN_SERVO_AZIM) || defined(PIN_SERVO_ELEV)
+#if defined(PLATFORM_ESP32)
+#include <Deneyap_Servo.h>
+#else
 #include <Servo.h>
 #endif
-
-#if defined(PIN_OLED_SDA)
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -17,7 +15,6 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define SCREEN_ADDRESS 0x3C
-#endif
 
 class VbatSampler
 {
@@ -69,7 +66,6 @@ private:
     void servoUpdate(uint32_t now);
     const int32_t azimToBearing(int32_t azim) const;
 
-#if defined(PIN_OLED_SDA)
     void displayState();
     void displayGpsIdle(uint32_t now);
     void displayActive(uint32_t now, int32_t projectedAzim);
@@ -80,7 +76,6 @@ private:
     void displayTargetCircle(int32_t projectedAzim);
     void displayTargetDistance();
     void displayVBat();
-#endif
 
     struct {
         int32_t lat;
@@ -109,14 +104,8 @@ private:
     uint32_t _lastAzimFlipMs;
     VbatSampler _vbat;
 
-#if defined(PIN_SERVO_AZIM)
     Servo _servo_Azim;
-#endif
-#if defined(PIN_SERVO_ELEV)
     Servo _servo_Elev;
-#endif
-#if defined(PIN_OLED_SDA)
     Adafruit_SSD1306 _display;
     uint32_t _lastDisplayActiveMs;
-#endif
 };
