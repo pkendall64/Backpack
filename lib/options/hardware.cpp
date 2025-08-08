@@ -18,6 +18,8 @@ static const struct {
     const char *name;
     const datatype_t type;
 } fields[] = {
+    {HARDWARE_device_type, "device_type", INT},
+
     {HARDWARE_button, "button", INT},
     {HARDWARE_led, "led", INT},
     {HARDWARE_led_invert, "led_invert", BOOL},

@@ -1,3 +1,4 @@
+#ifdef TARGET_VRX_BACKPACK
 #include <Arduino.h>
 
 #include <Wire.h>
@@ -6,7 +7,6 @@
 
 #include "devHeadTracker.h"
 
-#if defined(HAS_HEADTRACKING)
 #include "config.h"
 #include "logging.h"
 
@@ -16,7 +16,8 @@
 #include "QMI8658C.h"
 #include "Fusion.h"
 #include "hardware.h"
-#include "options.h"
+
+extern int16_t ptrChannelData[3];
 
 static HeadTrackerState ht_state = STATE_ERROR;
 static IMUBase *imu;
@@ -31,7 +32,7 @@ static uint32_t cal_started;
 
 static bool initialize()
 {
-    if (!firmwareOptions.hasHeadTracker)
+    if (!HAS_HEAD_TRACKER)
     {
         return false;
     }
@@ -68,7 +69,7 @@ static bool initialize()
         delete imu;
         imu = nullptr;
         ht_state = STATE_ERROR;
-        return;
+        return false;
     }
 
     FusionAhrsInitialise(&ahrs);
@@ -194,7 +195,7 @@ void startIMUCalibration()
 
 HeadTrackerState getHeadTrackerState()
 {
-    return ht_state;
+    return HAS_HEAD_TRACKER ? ht_state : STATE_RUNNING;
 }
 
 void resetBoardOrientation()
@@ -228,19 +229,37 @@ void setBoardOrientation(int xAngle, int yAngle, int zAngle)
 
 void resetCenter()
 {
-    rollHome += euler.angle.roll;
-    pitchHome += euler.angle.pitch;
-    yawHome += euler.angle.yaw;
-    rollHome = normalize(rollHome, -180.0, 180.0);
-    pitchHome = normalize(pitchHome, -180.0, 180.0);
-    yawHome = normalize(yawHome, -180.0, 180.0);
+    if (HAS_HEAD_TRACKER) {
+        rollHome += euler.angle.roll;
+        pitchHome += euler.angle.pitch;
+        yawHome += euler.angle.yaw;
+        rollHome = normalize(rollHome, -180.0, 180.0);
+        pitchHome = normalize(pitchHome, -180.0, 180.0);
+        yawHome = normalize(yawHome, -180.0, 180.0);
+    }
+}
+
+static float fmap(float x, float in_min, float in_max, float out_min, float out_max) {
+    const float run = in_max - in_min;
+    const float rise = out_max - out_min;
+    const float delta = x - in_min;
+    return (delta * rise) / run + out_min;
 }
 
 void getEuler(float *yaw, float *pitch, float *roll)
 {
-    *yaw = normalize(euler.angle.yaw, -180.0, 180.0);
-    *pitch = normalize(euler.angle.pitch, -180.0, 180.0);
-    *roll = normalize(euler.angle.roll, -180.0, 180.0);
+    if (HAS_HEAD_TRACKER)
+    {
+        *yaw = normalize(euler.angle.yaw, -180.0, 180.0);
+        *pitch = normalize(euler.angle.pitch, -180.0, 180.0);
+        *roll = normalize(euler.angle.roll, -180.0, 180.0);
+    }
+    else
+    {
+        *yaw = -fmap(ptrChannelData[0], CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_2000, -180.0, 180.0);
+        *pitch = fmap(ptrChannelData[2], CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_2000, -180.0, 180.0);
+        *roll = fmap(ptrChannelData[1], CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_2000, -180.0, 180.0);
+    }
 }
 
 device_t HeadTracker_device = {
@@ -249,9 +268,10 @@ device_t HeadTracker_device = {
     .event = nullptr,
     .timeout = timeout
 };
+/**
 
-#endif
-#if defined(SUPPORT_HEADTRACKING)
+These are the functions for if there's no GYRO, i.e. support from messages
+
 extern int16_t ptrChannelData[3];
 
 HeadTrackerState getHeadTrackerState()
@@ -276,4 +296,5 @@ void getEuler(float *yaw, float *pitch, float *roll)
     *pitch = fmap(ptrChannelData[2], CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_2000, -180.0, 180.0);
     *roll = fmap(ptrChannelData[1], CRSF_CHANNEL_VALUE_1000, CRSF_CHANNEL_VALUE_2000, -180.0, 180.0);
 }
+*/
 #endif

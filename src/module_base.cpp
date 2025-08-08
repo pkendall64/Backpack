@@ -9,6 +9,7 @@
 
 #include "devHeadTracker.h"
 #include "crsf_protocol.h"
+#include "hardware.h"
 
 int16_t ptrChannelData[3];
 void RebootIntoWifi(wifi_service_t service = WIFI_SERVICE_UPDATE);
@@ -20,9 +21,8 @@ void sendMSPViaEspnow(mspPacket_t *packet);
 void
 ModuleBase::Loop(uint32_t now)
 {
-#if defined(HAS_HEADTRACKING)
     static uint32_t lastSend = 0;
-    if (connectionState != wifiUpdate && headTrackingEnabled && now - lastSend > 20)
+    if (HAS_HEAD_TRACKER && connectionState != wifiUpdate && headTrackingEnabled && now - lastSend > 20)
     {
         float fyaw, fpitch, froll;
         getEuler(&fyaw, &fpitch, &froll);
@@ -46,7 +46,6 @@ ModuleBase::Loop(uint32_t now)
         lastSend = now;
 // Serial.printf("%d, %d, %d\r\n",pan, tilt, roll);
     }
-#endif
 }
 
 void

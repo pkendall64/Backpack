@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(AAT_BACKPACK)
+#if defined(TARGET_VRX_BACKPACK)
 
 #include <cstdint>
 #include <ArduinoJson.h>
@@ -9,4 +9,4 @@
 void WebAatAppendConfig(ArduinoJson::JsonDocument &json);
 void WebAatInit(AsyncWebServer &server);
 
-#endif /* defined(AAT_BACKPACK) */
+#endif /* defined(TARGET_VRX_BACKPACK) */

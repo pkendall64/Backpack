@@ -79,6 +79,16 @@ def scan():
     response.content_type = 'text/javascript; charset=latin9'
     return apply_template('scan.js')
 
+@route('/hardware.js')
+def hardware_js():
+    response.content_type = 'text/javascript; charset=latin9'
+    return apply_template('hardware.js')
+
+@route('/hardware.html')
+def hardware_html():
+    response.content_type = 'text/html; charset=latin9'
+    return apply_template('hardware.html')
+
 @route('/mui.css')
 def mui_css():
     response.content_type = 'text/css; charset=latin9'

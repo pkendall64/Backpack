@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef TARGET_VRX_BACKPACK
 #include "device.h"
 
 extern device_t HeadTracker_device;
@@ -18,3 +19,4 @@ HeadTrackerState getHeadTrackerState();
 
 void resetCenter();
 void getEuler(float *yaw, float *pitch, float *roll);
+#endif

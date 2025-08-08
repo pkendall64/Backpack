@@ -1,7 +1,9 @@
-#if defined(AAT_BACKPACK)
-
+#if defined(TARGET_VRX_BACKPACK)
 #include "devwifi_proxies.h"
 #include "module_aat.h"
+#include "config.h"
+
+extern ModuleBase *vrxModule;
 
 void WebAatAppendConfig(ArduinoJson::JsonDocument &json)
 {
@@ -21,7 +23,7 @@ void WebAatAppendConfig(ArduinoJson::JsonDocument &json)
     auto vbat = json["config"].createNestedObject("vbat");
     vbat["offset"] = config.GetVbatOffset();
     vbat["scale"] = config.GetVbatScale();
-    vbat["vbat"] = vrxModule.getVbat();
+    vbat["vbat"] = ((AatModule *)vrxModule)->getVbat();
 }
 
 void WebAatConfig(AsyncWebServerRequest *request)
@@ -52,9 +54,9 @@ void WebAatConfig(AsyncWebServerRequest *request)
         config.SetVbatScale(request->arg("vbat_scale").toInt());
     // Servo Target Override (must be set after azim_center because bearing relies on center)
     if (request->hasArg("bear"))
-        vrxModule.overrideTargetBearing(request->arg("bear").toInt());
+        ((AatModule *)vrxModule)->overrideTargetBearing(request->arg("bear").toInt());
     if (request->hasArg("elev"))
-        vrxModule.overrideTargetElev(request->arg("elev").toInt());
+        ((AatModule *)vrxModule)->overrideTargetElev(request->arg("elev").toInt());
     // Satellite Config
     if (request->hasArg("satmin"))
         config.SetAatSatelliteHomeMin(request->arg("satmin").toInt());
@@ -75,6 +77,4 @@ void WebAatInit(AsyncWebServer &server)
 {
     server.on("/aatconfig", WebAatConfig);
 }
-
-#endif /* defined(AAT_BACKPACK) */
-
+#endif

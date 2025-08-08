@@ -45,10 +45,10 @@ bool isBinding = false;
 bool espnowCTS = true;
 bool sendSuccess = false;
 
-device_t *ui_devices[] = {
-  &LED_device,
-  &Button_device,
-  &WIFI_device,
+device_affinity_t ui_devices[] = {
+  {&LED_device, 1},
+  {&Button_device, 1},
+  {&WIFI_device, 1},
 };
 
 #if defined(PLATFORM_ESP32)
@@ -239,7 +239,7 @@ void ProcessMSPPacketFromTimer(mspPacket_t *packet, uint32_t now)
         {
             DBGLN("Enter WIFI mode...");
             connectionState = wifiUpdate;
-            devicesTriggerEvent();
+            devicesTriggerEvent(EVENT_CONNECTION_CHANGED);
         }
         SendInProgressResponse();
       }
@@ -415,7 +415,8 @@ void setup()
   config.SetStorageProvider(&eeprom);
   config.Load();
 
-  devicesInit(ui_devices, ARRAY_SIZE(ui_devices));
+  devicesRegister(ui_devices, ARRAY_SIZE(ui_devices));
+  devicesInit();
 
   #ifdef DEBUG_ELRS_WIFI
     config.SetStartWiFiOnBoot(true);
@@ -426,7 +427,7 @@ void setup()
     config.SetStartWiFiOnBoot(false);
     config.Commit();
     connectionState = wifiUpdate;
-    devicesTriggerEvent();
+    devicesTriggerEvent(EVENT_CONNECTION_CHANGED);
   }
   else
   {

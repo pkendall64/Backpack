@@ -10,9 +10,11 @@
 #include <ESPmDNS.h>
 #include <Update.h>
 #include <esp_wifi.h>
+#include <SPIFFS.h>
 #else
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#include <FS.h>
 #define wifi_mode_t WiFiMode_t
 #endif
 #include <DNSServer.h>
@@ -25,7 +27,7 @@
 
 #include "common.h"
 #include "logging.h"
-#include "../options/options.h"
+#include "options.h"
 #include "helpers.h"
 
 #include "UpdateWrapper.h"
@@ -34,16 +36,15 @@
 #include "WebContent.h"
 
 #include "config.h"
+#include "hardware.h"
 
 #if defined(MAVLINK_ENABLED)
 #include <MAVLink.h>
 #endif
 #if defined(TARGET_VRX_BACKPACK)
-#if defined(HAS_HEADTRACKING)|| defined(SUPPORT_HEADTRACKING)
 #include "devHeadTracker.h"
 #include "crsf_protocol.h"
 
-#endif
 extern VrxBackpackConfig config;
 extern bool sendRTCChangesToVrx;
 #elif defined(TARGET_TX_BACKPACK)
@@ -96,7 +97,7 @@ static IPAddress apBroadcast(10, 0, 0, 255);
 static DNSServer dnsServer;
 
 static AsyncWebServer server(80);
-#if defined(HAS_HEADTRACKING)|| defined(SUPPORT_HEADTRACKING)
+#if defined(TARGET_VRX_BACKPACK)
 static AsyncWebSocket ws("/ws");
 extern bool sendHeadTrackingChangesToVrx;
 extern bool headTrackingEnabled;
@@ -220,27 +221,32 @@ static struct {
   {"/elrs.css", "text/css", (uint8_t *)ELRS_CSS, sizeof(ELRS_CSS)},
   {"/mui.js", "text/javascript", (uint8_t *)MUI_JS, sizeof(MUI_JS)},
   {"/scan.js", "text/javascript", (uint8_t *)SCAN_JS, sizeof(SCAN_JS)},
+  {"/hardware.html", "text/html", (uint8_t *)HARDWARE_HTML, sizeof(HARDWARE_HTML)},
+  {"/hardware.js", "text/javascript", (uint8_t *)HARDWARE_JS, sizeof(HARDWARE_JS)},
   {"/logo.svg", "image/svg+xml", (uint8_t *)LOGO_SVG, sizeof(LOGO_SVG)},
-#if defined(HAS_HEADTRACKING) || defined(SUPPORT_HEADTRACKING)
+#if defined(TARGET_VRX_BACKPACK)
   {"/airplane.obj", "text/plain", (uint8_t *)PLANE_OBJ, sizeof(PLANE_OBJ)},
   {"/texture.gif", "image/gif", (uint8_t *)TEXTURE_GIF, sizeof(TEXTURE_GIF)},
   {"/p5.js", "text/javascript", (uint8_t *)P5_JS, sizeof(P5_JS)},
 #endif
 };
 
-#if defined(HAS_HEADTRACKING) || defined(SUPPORT_HEADTRACKING)
+#if defined(TARGET_VRX_BACKPACK)
 static void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len)
 {
   if (type == WS_EVT_CONNECT) {
     static const char IMU_JSON[] PROGMEM = R"=====({"orientation":true,"heading":%f,"pitch":%f,"roll":%f,"hasIMU":%s})=====";
     // Send JSON over websocket
     char payload[128];
-#if defined(HAS_HEADTRACKING)
-    float (*o)[3] = config.GetBoardOrientation();
-    snprintf_P(payload, sizeof(payload), IMU_JSON, (*o)[2] * RAD_TO_DEG, (*o)[0] * RAD_TO_DEG, (*o)[1] * RAD_TO_DEG, "true");
-#else
-    snprintf_P(payload, sizeof(payload), IMU_JSON, 0.0, 0.0, 0.0, "false");
-#endif
+    if (HAS_HEAD_TRACKER)
+    {
+      float (*o)[3] = config.GetBoardOrientation();
+      snprintf_P(payload, sizeof(payload), IMU_JSON, (*o)[2] * RAD_TO_DEG, (*o)[0] * RAD_TO_DEG, (*o)[1] * RAD_TO_DEG, "true");
+    }
+    else
+    {
+      snprintf_P(payload, sizeof(payload), IMU_JSON, 0.0, 0.0, 0.0, "false");
+    }
     ws.text(client->id(), payload, strlen(payload));
     headTrackingEnabled = true;
     sendHeadTrackingChangesToVrx = true;
@@ -249,27 +255,27 @@ static void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, Aw
     if (memcmp(data, "sc", 2) == 0) {
       resetCenter();
     }
-#if defined(HAS_HEADTRACKING)
-    if (memcmp(data, "o:", 2) == 0) {
-      char buf[64];
-      memcpy(buf, data+2, len-2);
-      buf[len-2] = 0;
-      char * colon = strchr(buf, ':');
-      *colon = 0;
-      int x = atoi(buf);
-      char *colon2 = strchr(colon+1, ':');
-      *colon2 = 0;
-      int y = atoi(colon+1);
-      int z = atoi(colon2+1);
-      setBoardOrientation(x, y, z);
-    } else if (memcmp(data, "ci", 2) == 0) {
-      startIMUCalibration();
-    } else if (memcmp(data, "ro", 2) == 0) {
-      resetBoardOrientation();
-    } else if (memcmp(data, "sv", 2) == 0) {
-      saveBoardOrientation();
+    if (HAS_HEAD_TRACKER) {
+      if (memcmp(data, "o:", 2) == 0) {
+        char buf[64];
+        memcpy(buf, data+2, len-2);
+        buf[len-2] = 0;
+        char * colon = strchr(buf, ':');
+        *colon = 0;
+        int x = atoi(buf);
+        char *colon2 = strchr(colon+1, ':');
+        *colon2 = 0;
+        int y = atoi(colon+1);
+        int z = atoi(colon2+1);
+        setBoardOrientation(x, y, z);
+      } else if (memcmp(data, "ci", 2) == 0) {
+        startIMUCalibration();
+      } else if (memcmp(data, "ro", 2) == 0) {
+        resetBoardOrientation();
+      } else if (memcmp(data, "sv", 2) == 0) {
+        saveBoardOrientation();
+      }
     }
-#endif
   }
 }
 #endif
@@ -304,6 +310,32 @@ static void WebUpdateHandleRoot(AsyncWebServerRequest *request)
   request->send(response);
 }
 
+static void putFile(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
+{
+  static File file;
+  static size_t bytes;
+  if (!file || request->url() != file.name()) {
+    file = SPIFFS.open(request->url(), "w");
+    bytes = 0;
+  }
+  file.write(data, len);
+  bytes += len;
+  if (bytes == total) {
+    file.close();
+  }
+}
+
+static void getFile(AsyncWebServerRequest *request)
+{
+  if (request->url() == "/options.json") {
+    request->send(200, "application/json", getOptions());
+  } else if (request->url() == "/hardware.json") {
+    request->send(200, "application/json", getHardware());
+  } else {
+    request->send(SPIFFS, request->url().c_str(), "text/plain", true);
+  }
+}
+
 static void GetConfiguration(AsyncWebServerRequest *request)
 {
   JsonDocument json;
@@ -311,11 +343,12 @@ static void GetConfiguration(AsyncWebServerRequest *request)
   json["config"]["mode"] = wifiMode == WIFI_STA ? "STA" : "AP";
   json["config"]["product_name"] = firmwareOptions.product_name;
 
-#if defined(HAS_HEADTRACKING) || defined(SUPPORT_HEADTRACKING)
+#if defined(TARGET_VRX_BACKPACK)
   json["config"]["head-tracking"] = true;
-#endif
-#if defined(AAT_BACKPACK)
-  WebAatAppendConfig(json);
+  if (DEVICE_TYPE_IS(DEVICE_DIY_AAT))
+  {
+    WebAatAppendConfig(json);
+  }
 #endif
 
   AsyncResponseStream *response = request->beginResponseStream("application/json");
@@ -742,6 +775,8 @@ static void startServices()
   server.on("/elrs.css", WebUpdateSendContent);
   server.on("/mui.js", WebUpdateSendContent);
   server.on("/scan.js", WebUpdateSendContent);
+  server.on("/hardware.js", WebUpdateSendContent);
+  server.on("/hardware.js", WebUpdateSendContent);
   server.on("/logo.svg", WebUpdateSendContent);
   server.on("/config", HTTP_GET, GetConfiguration);
   server.on("/networks.json", WebUpdateSendNetworks);
@@ -765,8 +800,12 @@ static void startServices()
   server.on("/update", HTTP_POST, WebUploadResponseHandler, WebUploadDataHandler);
   server.on("/forceupdate", WebUploadForceUpdateHandler);
   server.on("/setrtc", WebUploadRTCUpdateHandler);
-#if defined(AAT_BACKPACK)
-  WebAatInit(server);
+  server.on("/hardware.json", getFile).onBody(putFile);
+#if defined(TARGET_VRX_BACKPACK)
+  if (DEVICE_TYPE_IS(DEVICE_DIY_AAT))
+  {
+    WebAatInit(server);
+  }
 #endif
 #if defined(MAVLINK_ENABLED)
   server.on("/mavlink", HTTP_GET, WebMAVLinkHandler);
@@ -779,7 +818,7 @@ static void startServices()
     server.on(files[i].url, WebUpdateSendContent);
   }
 
-  #if defined(HAS_HEADTRACKING)|| defined(SUPPORT_HEADTRACKING)
+  #if defined(TARGET_VRX_BACKPACK)
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
   #endif
@@ -962,7 +1001,7 @@ static void HandleWebUpdate()
       rebootTime = millis() + 200;
     }
 
-#if defined(HAS_HEADTRACKING)|| defined(SUPPORT_HEADTRACKING)
+#if defined(TARGET_VRX_BACKPACK)
     static long lastCall = 0;
     static HeadTrackerState last_state = STATE_ERROR;
     if (now - lastCall > 50) {

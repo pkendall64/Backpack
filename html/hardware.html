@@ -1,0 +1,121 @@
+@@require(PLATFORM, VERSION, isTX)
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+	<title>Welcome to your ExpressLRS System</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="mui.css" />
+	<link rel="stylesheet" href="elrs.css" />
+	<style>
+
+img.icon-input {
+	content: url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8'%3F%3E%3Csvg width='700pt' height='700pt' version='1.1' viewBox='0 0 700 700' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m326.67 46.668h46.664v260.54l140-140 32.996 32.992-196.33 196.33-196.33-196.33 32.996-32.992 140 140zm210 396.66v-93.332h46.664v140h-466.66v-140h46.664v93.332z' fill='%2312B0FB' fill-rule='evenodd'/%3E%3C/svg%3E%0A");
+	display: block;
+	height: 1.5em;
+	width: 1.5em;
+	float: left;
+}
+td img.icon-input {
+	float: right;
+}
+
+img.icon-output {
+	content: url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8'%3F%3E%3Csvg width='700pt' height='700pt' version='1.1' viewBox='0 0 700 700' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m373.33 396.67h-46.664v-283.88l-140 140-32.996-32.992 196.33-196.33 196.33 196.33-32.996 32.992-140-140zm163.34 46.664v-93.332h46.664v140h-466.66v-140h46.664v93.332z' fill='%2371D358' fill-rule='evenodd'/%3E%3C/svg%3E%0A");
+	display: block;
+	height: 1.5em;
+	width: 1.5em;
+	float: left;
+}
+td img.icon-output {
+	float: right;
+}
+
+img.icon-pwm {
+	content: url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Cg stroke='%23C462DD' stroke-width='10' stroke-linecap='undefined' stroke-linejoin='undefined' fill='none'%3E%3Cline y2='318' x2='2' y1='318' x1='106'/%3E%3Cline y2='74' x2='105' y1='323.00001' x1='105'/%3E%3Cline y2='79' x2='254.00001' y1='79' x1='106'/%3E%3Cline y2='323' x2='249' y1='79' x1='249'/%3E%3Cline y2='318' x2='248' y1='318' x1='320'/%3E%3Cline y2='317' x2='315' y1='77' x1='315'/%3E%3Cline y2='77' x2='310' y1='77' x1='377'/%3E%3Cline y2='78' x2='372' y1='322.00001' x1='372'/%3E%3Cline y2='317' x2='371' y1='317' x1='399'/%3E%3C/g%3E%3C/svg%3E");
+	display: block;
+	height: 1.5em;
+	width: 1.5em;
+	float: left;
+}
+td img.icon-pwm {
+	float: right;
+}
+	</style>
+</head>
+
+<body>
+	<header class="mui-appbar mui--z1 mui--text-center elrs-header">
+		<img src="logo.svg" height="250" width="250" style="padding:20px;"></a>
+		<h1><b>ExpressLRS</b></h1>
+		<span id="product_name"></span><br/>
+		<b>Firmware Rev. </b>@@{VERSION}</span>
+	</header>
+	<br>
+	<div class="mui-container-fluid mui-col-sm-10 mui-col-sm-offset-1">
+		<div id="custom_config" class="mui-panel" style="display:none; background-color: #FFC107;">
+			This hardware configuration has been customised. This can be safely ignored if this is a custom hardware build or for testing purposes.<br>
+			You can <a download href="/hardware.json">download</a> the configuration or <a href="/reset?hardware">reset</a> to pre-configured defaults and reboot.
+		</div>
+		<div class="mui-panel">
+			<label>Upload target configuration (remember to press "Save Target Configuration" below):</label>
+			<button class="mui-btn mui-btn--small mui-btn--primary upload">
+				<label>
+					Upload
+					<input type="file" id="fileselect" name="fileselect[]" />
+				</label>
+			</button>
+			<div id="filedrag">or drop files here</div>
+		</div>
+		<div class="mui-panel">
+			<form id='upload_hardware' method='POST' action="/hardware">
+				<input type="hidden" id="customised" name="customised" value="true"/>
+				<table>
+					<tr><td colspan='2'><b>Device Type</td></tr>
+					<tr><td></td><td>Device Type</td><td>
+						<select id='device_type' name='device_type'>
+							<option value='0'>None</option>
+							<option value='1'>Rapidfire</option>
+							<option value='2'>RX5808</option>
+							<option value='3'>Steadyview</option>
+							<option value='4'>Fusion</option>
+							<option value='5'>HDZero</option>
+							<option value='6'>Steadyview X</option>
+							<option value='7'>Orqa</option>
+							<option value='8'>DIY Antenna Tracker</option>
+							<option value='9'>MFD Crossbow</option>
+						</select>
+					</td><td>If this is a VRx choose the VRx type connected to this backpack</td></tr>
+
+					<tr><td colspan='2'><b>SPI Pins</td></tr>
+					<tr><td></td><td>CLK pin<img class="icon-output"/></td><td><input size='3' id='spi_sck' name='spi_sck' type='text'/></td><td>Clock pin connected to (possibly) multiple SX1280/127x</td></tr>
+					<tr><td></td><td>MOSI pin<img class="icon-input"/></td><td><input size='3' id='spi_miso' name='spi_miso' type='text'/></td><td>MISO connected to (possibly) multiple SX1280/127x</td></tr>
+					<tr><td></td><td>CS pin<img class="icon-output"/></td><td><input size='3' id='spi_nss' name='spi_nss' type='text'/></td><td>Chip select pin for first SX1280/127x</td></tr>
+					<tr><td></td><td>CS_2 pin<img class="icon-output"/></td><td><input size='3' id='spi_nss_2' name='spi_nss_2' type='text'/></td><td>Chip select pin for second SX1280</td></tr>
+
+					<tr><td colspan='2'><b>Lighting</td></tr>
+					<tr><td></td><td>LED pin<img class="icon-output"/></td><td><input size='3' id='led' name='led' type='text'/></td><td>Only use when only a single LED is used</td></tr>
+					<tr><td></td><td>LED inverted</td><td><input size='3' id='led_invert' name='led_invert' type='checkbox'/></td><td>LEDs are active LOW unless this is checked</td></tr>
+					<tr><td colspan='2'><b>Button</td></tr>
+					<tr><td></td><td>Button pin<img class="icon-output"/></td><td><input size='3' id='button' name='button' type='text'/></td><td>Single/first (active low) button</td></tr>
+
+					<tr><td colspan='2'><b>I2C for OLED or Gyro</td></tr>
+<!--					<tr><td></td><td>180 rotation</td><td><input size='3' id='screen_reversed' name='screen_reversed' type='checkbox'/></td><td>Select to rotate the display 180 degrees</td></tr>-->
+					<tr><td></td><td>SCL pin<img class="icon-output"/></td><td><input size='3' id='i2c_scl' name='i2c_scl' type='text'/></td><td>Clock</td></tr>
+					<tr><td></td><td>SDA pin<img class="icon-input"/><img class="icon-output"/></td><td><input size='3' id='i2c_sda' name='i2c_sda' type='text'/></td><td>Data</td></tr>
+					<tr><td></td><td>INT pin<img class="icon-input"/></td><td><input size='3' id='i2c_int' name='i2c_int' type='text'/></td><td>Interrupt pin for I2C gyro if this is a head-tracker</td></tr>
+
+					<tr><td colspan='2'><b>Servos</td></tr>
+					<tr><td></td><td>Azimuth servo pin<img class="icon-pwm"/></td><td><input size='40' id='servo_azim' name='servo_azim' type='text'/></td><td>Pin for azimuth servo</td></tr>
+					<tr><td></td><td>Elevation servo pin<img class="icon-pwm"/></td><td><input size='40' id='servo_elev' name='servo_elev' type='text'/></td><td>Pin for elevation servo</td></tr>
+
+				</table>
+				<br>
+				<input type='button' value='Save Target Configuration' class='mui-btn mui-btn--primary' onclick="submitHardwareSettings()"/>
+			</form>
+		</div>
+	</div>
+</body>
+<script src="hardware.js"></script>
+</html>

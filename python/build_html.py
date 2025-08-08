@@ -53,6 +53,8 @@ def build_common(env, mainfile):
             build_version(out, env)
             build_html(mainfile, "INDEX_HTML", out, env)
             build_html("scan.js", "SCAN_JS", out, env)
+            build_html("hardware.js", "HARDWARE_JS", out, env)
+            build_html("hardware.html", "HARDWARE_HTML", out, env)
             build_html("mui.js", "MUI_JS", out, env)
             build_html("elrs.css", "ELRS_CSS", out, env)
             build_html("mui.css", "MUI_CSS", out, env)

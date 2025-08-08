@@ -1,4 +1,6 @@
 typedef enum {
+    HARDWARE_device_type,
+
     // Basic controls
     HARDWARE_button,
     HARDWARE_led,
@@ -22,11 +24,29 @@ typedef enum {
     HARDWARE_LAST
 } nameType;
 
+enum device_type_e
+{
+    DEVICE_NONE,
+    DEVICE_RAPIDFIRE,
+    DEVICE_RX5808,
+    DEVICE_STEADYVIEW,
+    DEVICE_FUSION,
+    DEVICE_HDZERO,
+    DEVICE_SKYZONE_MSP,
+    DEVICE_ORQA,
+    DEVICE_DIY_AAT,
+    DEVICE_MFD_CROSSBOW
+};
+
 int hardware_pin(nameType name);
 bool hardware_flag(nameType name);
 int hardware_int(nameType name);
 
 #define UNDEF_PIN (-1)
+
+#define DEVICE_TYPE ((device_type_e)hardware_int(HARDWARE_device_type))
+#define DEVICE_TYPE_IS(type) (DEVICE_TYPE == type)
+#define HAS_HEAD_TRACKER (hardware_pin(HARDWARE_i2c_int) != UNDEF_PIN)
 
 #define GPIO_PIN_BUTTON hardware_pin(HARDWARE_button)
 #define GPIO_PIN_LED hardware_pin(HARDWARE_led)

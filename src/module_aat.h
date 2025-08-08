@@ -109,5 +109,3 @@ private:
     Adafruit_SSD1306 _display;
     uint32_t _lastDisplayActiveMs;
 };
-
-extern AatModule vrxModule;

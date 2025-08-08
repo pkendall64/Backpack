@@ -15,7 +15,7 @@
 #include "logging.h"
 #include "helpers.h"
 #include "common.h"
-#include "../lib/options/options.h"
+#include "options.h"
 #include "config.h"
 #include "crsf_protocol.h"
 
@@ -24,8 +24,9 @@
 #include "devButton.h"
 #include "devLED.h"
 #include "devHeadTracker.h"
+#include "hardware.h"
 
- #include "rapidfire.h"
+#include "rapidfire.h"
  #include "rx5808.h"
  #include "steadyview.h"
  #include "tbs_fusion.h"
@@ -205,11 +206,13 @@ void ProcessMSPPacket(mspPacket_t *packet)
   case MSP_ELRS_BACKPACK_SET_HEAD_TRACKING:
     DBGLN("Processing MSP_ELRS_BACKPACK_SET_HEAD_TRACKING...");
     headTrackingEnabled = packet->readByte();
-    #if defined(HAS_HEADTRACKING)
-    resetCenter();
-    #else
+#if defined(TARGET_VRX_BACKPACK)
+    if (HAS_HEAD_TRACKER) {
+      resetCenter();
+    }
+#else
     sendHeadTrackingChangesToVrx = true;
-    #endif
+#endif
     break;
   case MSP_ELRS_BACKPACK_CRSF_TLM:
     DBGV("Processing MSP_ELRS_BACKPACK_CRSF_TLM type %x\n", packet->payload[1]);
@@ -298,7 +301,7 @@ void SetSoftMACAddress()
 
 void RequestVTXPacket()
 {
-  if (firmwareOptions.deviceType != DEVICE_DIY_AAT && firmwareOptions.deviceType != DEVICE_MFD_CROSSBOW)
+  if (!DEVICE_TYPE_IS(DEVICE_DIY_AAT) && !DEVICE_TYPE_IS(DEVICE_MFD_CROSSBOW))
   {
     mspPacket_t packet;
     packet.reset();
@@ -396,7 +399,7 @@ void setup()
   options_init();
 
   vrxModule = new HDZero(&Serial);
-  switch (firmwareOptions.deviceType)
+  switch (DEVICE_TYPE)
   {
     case DEVICE_RAPIDFIRE:
       vrxModule = new Rapidfire;
@@ -425,6 +428,8 @@ void setup()
     case DEVICE_MFD_CROSSBOW:
       vrxModule = new MFDCrossbow(&Serial);
       break;
+    default:
+      vrxModule = new HDZero(&Serial);  // TODO we should have a noop-device
   }
 
   eeprom.Begin();
