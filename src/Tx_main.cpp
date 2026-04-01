@@ -90,6 +90,48 @@ void RebootIntoWifi(wifi_service_t service = WIFI_SERVICE_UPDATE)
 
 void ProcessMSPPacketFromPeer(mspPacket_t *packet)
 {
+  if (connectionState == binding)
+  {
+    DBGLN("Processing Binding Packet...");
+    if (packet->function == MSP_ELRS_BIND)
+    {
+      memcpy(firmwareOptions.uid, packet->payload, sizeof(firmwareOptions.uid));
+      DBGLN("MSP_ELRS_BIND MAC = ");
+      for (int i = 0; i < 6; i++)
+      {
+        DBG("%x", packet->payload[i]); // Debug prints
+        DBG(",");
+      }
+      DBG(""); // Extra line for serial output readability
+      // Soft-set the MAC address to the passphrase UID for binding
+#if defined(PLATFORM_ESP8266)
+      wifi_set_macaddr(STATION_IF, firmwareOptions.uid);
+      esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
+      esp_now_add_peer(firmwareOptions.uid, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
+#elif defined(PLATFORM_ESP32)
+      esp_wifi_set_mac(WIFI_IF_STA, firmwareOptions.uid);
+      memcpy(peerInfo.peer_addr, firmwareOptions.uid, 6);
+      peerInfo.channel = 0;
+      peerInfo.encrypt = false;
+      if (esp_now_add_peer(&peerInfo) != ESP_OK)
+      {
+        DBGLN("ESP-NOW failed to add peer");
+        return;
+      }
+      memcpy(bindingInfo.peer_addr, bindingAddress, 6);
+      bindingInfo.channel = 0;
+      bindingInfo.encrypt = false;
+      if (esp_now_add_peer(&bindingInfo) != ESP_OK)
+      {
+        DBGLN("ESP-NOW failed to add binding peer");
+        return;
+      }
+#endif
+      connectionState = running;
+    }
+    return;
+  }
+
   switch (packet->function) {
     case MSP_ELRS_REQU_VTX_PKT: {
       DBGLN("MSP_ELRS_REQU_VTX_PKT...");
@@ -128,12 +170,16 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *data, int data_len)
     {
       // Finished processing a complete packet
       // Only process packets from a bound MAC address
-      if (firmwareOptions.uid[0] == mac_addr[0] &&
-          firmwareOptions.uid[1] == mac_addr[1] &&
-          firmwareOptions.uid[2] == mac_addr[2] &&
-          firmwareOptions.uid[3] == mac_addr[3] &&
-          firmwareOptions.uid[4] == mac_addr[4] &&
-          firmwareOptions.uid[5] == mac_addr[5])
+      if (connectionState == binding ||
+          (
+            firmwareOptions.uid[0] == mac_addr[0] &&
+            firmwareOptions.uid[1] == mac_addr[1] &&
+            firmwareOptions.uid[2] == mac_addr[2] &&
+            firmwareOptions.uid[3] == mac_addr[3] &&
+            firmwareOptions.uid[4] == mac_addr[4] &&
+            firmwareOptions.uid[5] == mac_addr[5]
+            )
+          )
       {
         ProcessMSPPacketFromPeer(recv_msp.getReceivedPacket());
       }
@@ -261,6 +307,11 @@ void ProcessMSPPacketFromTX(mspPacket_t *packet)
     sendMSPViaEspnow(packet);
     break;
 
+  case MSP_ELRS_TRAINER:
+    DBGLN("Processing MSP_ELRS_TRAINER...");
+    connectionState = binding;
+    break;
+
   default:
     // transparently forward MSP packets via espnow to any subscribers
     sendMSPViaEspnow(packet);
@@ -275,9 +326,9 @@ void sendMSPViaEspnow(mspPacket_t *packet)
 
   uint8_t result = msp.convertToByteArray(packet, nowDataOutput);
 
-  if (!result)
+  // packet could not be converted to array, or we're in binding mode, bail out
+  if (!result || connectionState == binding)
   {
-    // packet could not be converted to array, bail out
     return;
   }
 
