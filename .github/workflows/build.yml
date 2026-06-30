@@ -9,7 +9,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v7
     - id: set-targets
-      run: echo "targets=[$(grep -r "\[env:" targets | sed 's/.*://' | sed s/.$// | egrep "UART" | tr '\n' ',' | sed 's/,$/"\n/' | sed 's/,/","/'g | sed 's/^/"/')]" >> $GITHUB_OUTPUT
+      run: echo "targets=[$(grep "\[env:" targets/*.ini | sed 's/.*://' | sed s/.$// | egrep "UART" | tr '\n' ',' | sed 's/,$/"\n/' | sed 's/,/","/'g | sed 's/^/"/')]" >> $GITHUB_OUTPUT
 
   build:
     needs: targets
