@@ -3,7 +3,7 @@
 #if defined(PLATFORM_ESP8266)
   #include <espnow.h>
   #include <ESP8266WiFi.h>
-#elif defined(PLATFORM_ESP32)
+#else
   #include <esp_now.h>
   #include <esp_wifi.h>
   #include <WiFi.h>
@@ -105,7 +105,7 @@ void RebootIntoWifi(wifi_service_t service = WIFI_SERVICE_UPDATE)
 // espnow on-receive callback
 #if defined(PLATFORM_ESP8266)
 void OnDataRecv(uint8_t * mac_addr, uint8_t *data, uint8_t data_len)
-#elif defined(PLATFORM_ESP32)
+#else
 void OnDataRecv(const uint8_t * mac_addr, const uint8_t *data, int data_len)
 #endif
 {
@@ -134,7 +134,7 @@ void OnDataRecv(const uint8_t * mac_addr, const uint8_t *data, int data_len)
         gotInitialPacket = true;
         #if defined(PLATFORM_ESP8266)
           ProcessMSPPacket(recv_msp.getReceivedPacket());
-        #elif defined(PLATFORM_ESP32)
+        #else
           xQueueSend(rxqueue, recv_msp.getReceivedPacket(), (TickType_t)1024);
         #endif
       }
@@ -206,13 +206,11 @@ void ProcessMSPPacket(mspPacket_t *packet)
   case MSP_ELRS_BACKPACK_SET_HEAD_TRACKING:
     DBGLN("Processing MSP_ELRS_BACKPACK_SET_HEAD_TRACKING...");
     headTrackingEnabled = packet->readByte();
-#if defined(TARGET_VRX_BACKPACK)
     if (HAS_HEAD_TRACKER) {
       resetCenter();
+    } else {
+      sendHeadTrackingChangesToVrx = true;
     }
-#else
-    sendHeadTrackingChangesToVrx = true;
-#endif
     break;
   case MSP_ELRS_BACKPACK_CRSF_TLM:
     DBGV("Processing MSP_ELRS_BACKPACK_CRSF_TLM type %x\n", packet->payload[1]);
@@ -250,7 +248,7 @@ void SetupEspNow()
     #if defined(PLATFORM_ESP8266)
       esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
       esp_now_add_peer(firmwareOptions.uid, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
-    #elif defined(PLATFORM_ESP32)
+    #else
       memcpy(peerInfo.peer_addr, firmwareOptions.uid, 6);
       peerInfo.channel = 0;
       peerInfo.encrypt = false;
@@ -284,7 +282,7 @@ void SetSoftMACAddress()
   WiFi.mode(WIFI_STA);
   #if defined(PLATFORM_ESP8266)
     WiFi.setOutputPower(20.5);
-  #elif defined(PLATFORM_ESP32)
+  #else
     WiFi.setTxPower(WIFI_POWER_19_5dBm);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
   #endif
@@ -294,7 +292,7 @@ void SetSoftMACAddress()
   // Soft-set the MAC address to the passphrase UID for binding
   #if defined(PLATFORM_ESP8266)
     wifi_set_macaddr(STATION_IF, firmwareOptions.uid);
-  #elif defined(PLATFORM_ESP32)
+  #else
     esp_wifi_set_mac(WIFI_IF_STA, firmwareOptions.uid);
   #endif
 }
@@ -484,7 +482,7 @@ void loop()
         turnOffLED();
         ESP.restart();
       }
-  #elif defined(PLATFORM_ESP32)
+  #else
     if (rebootTime != 0 && now > rebootTime && uxQueueMessagesWaiting(rxqueue) == 0)
       {
         turnOffLED();

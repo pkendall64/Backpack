@@ -44,6 +44,10 @@ int hardware_int(nameType name);
 
 #define UNDEF_PIN (-1)
 
+#ifdef TARGET_TX_BACKPACK
+// TX targets are hard-coded, i.e. not hardware.html page for configuration
+#define GPIO_PIN_LED_INVERTED false
+#else
 #define DEVICE_TYPE ((device_type_e)hardware_int(HARDWARE_device_type))
 #define DEVICE_TYPE_IS(type) (DEVICE_TYPE == type)
 #define HAS_HEAD_TRACKER (hardware_pin(HARDWARE_i2c_int) != UNDEF_PIN)
@@ -63,3 +67,4 @@ int hardware_int(nameType name);
 
 #define GPIO_PIN_SERVO_AZIM hardware_pin(HARDWARE_servo_azim)
 #define GPIO_PIN_SERVO_ELEV hardware_pin(HARDWARE_servo_elev)
+#endif

@@ -1,7 +1,5 @@
-#if defined(MAVLINK_ENABLED)
 #include <Arduino.h>
 #include "MAVLink.h"
-#include <config.h>
 
 void
 MAVLink::ProcessMAVLinkFromTX(uint8_t c)
@@ -61,4 +59,3 @@ MAVLink::ProcessMAVLinkFromGCS(uint8_t *data, uint16_t len)
         }
     }
 }
-#endif

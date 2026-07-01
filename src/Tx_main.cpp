@@ -3,7 +3,7 @@
 #if defined(PLATFORM_ESP8266)
   #include <espnow.h>
   #include <ESP8266WiFi.h>
-#elif defined(PLATFORM_ESP32)
+#else
   #include <esp_now.h>
   #include <esp_wifi.h>
   #include <WiFi.h>
@@ -22,9 +22,7 @@
 #include "devButton.h"
 #include "devLED.h"
 
-#if defined(MAVLINK_ENABLED)
 #include <MAVLink.h>
-#endif
 
 /////////// GLOBALS ///////////
 
@@ -53,9 +51,7 @@ ELRS_EEPROM eeprom;
 TxBackpackConfig config;
 mspPacket_t cachedVTXPacket;
 mspPacket_t cachedHTPacket;
-#if defined(MAVLINK_ENABLED)
 MAVLink mavlink;
-#endif
 
 /////////// FUNCTION DEFS ///////////
 
@@ -76,10 +72,8 @@ void RebootIntoWifi(wifi_service_t service = WIFI_SERVICE_UPDATE)
 {
   DBGLN("Rebooting into wifi update mode...");
   config.SetStartWiFiOnBoot(true);
-#if defined(TARGET_TX_BACKPACK)
   // TODO it might be better to add wifi service to each type of backpack
   config.SetWiFiService(service);
-#endif
   config.Commit();
   rebootTime = millis();
 }
@@ -112,7 +106,7 @@ void ProcessMSPPacketFromPeer(mspPacket_t *packet)
 // espnow on-receive callback
 #if defined(PLATFORM_ESP8266)
 void OnDataRecv(uint8_t * mac_addr, uint8_t *data, uint8_t data_len)
-#elif defined(PLATFORM_ESP32)
+#else
 void OnDataRecv(const uint8_t * mac_addr, const uint8_t *data, int data_len)
 #endif
 {
@@ -341,7 +335,7 @@ void SetSoftMACAddress()
   WiFi.mode(WIFI_STA);
   #if defined(PLATFORM_ESP8266)
     WiFi.setOutputPower(20.5);
-  #elif defined(PLATFORM_ESP32)
+  #else
     WiFi.setTxPower(WIFI_POWER_19_5dBm);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
   #endif
@@ -351,7 +345,7 @@ void SetSoftMACAddress()
   // Soft-set the MAC address to the passphrase UID for binding
   #if defined(PLATFORM_ESP8266)
     wifi_set_macaddr(STATION_IF, firmwareOptions.uid);
-  #elif defined(PLATFORM_ESP32)
+  #else
     esp_wifi_set_mac(WIFI_IF_STA, firmwareOptions.uid);
   #endif
 }
@@ -419,7 +413,7 @@ void setup()
     #if defined(PLATFORM_ESP8266)
       esp_now_set_self_role(ESP_NOW_ROLE_COMBO);
       esp_now_add_peer(firmwareOptions.uid, ESP_NOW_ROLE_COMBO, 1, NULL, 0);
-    #elif defined(PLATFORM_ESP32)
+    #else
       memcpy(peerInfo.peer_addr, firmwareOptions.uid, 6);
       peerInfo.channel = 0;
       peerInfo.encrypt = false;
@@ -455,12 +449,10 @@ void loop()
 
   devicesUpdate(now);
 
-  #if defined(PLATFORM_ESP8266) || defined(PLATFORM_ESP32)
-    // If the reboot time is set and the current time is past the reboot time then reboot.
-    if (rebootTime != 0 && now > rebootTime) {
-      ESP.restart();
-    }
-  #endif
+  // If the reboot time is set and the current time is past the reboot time then reboot.
+  if (rebootTime != 0 && now > rebootTime) {
+    ESP.restart();
+  }
 
   while (Serial.available())
   {
@@ -474,10 +466,8 @@ void loop()
       msp.markPacketReceived();
     }
 
-  #if defined(MAVLINK_ENABLED)
     // Try to parse MAVLink packets from the TX
     mavlink.ProcessMAVLinkFromTX(c);
-  #endif
   }
 
   if (cacheFull && sendCached)

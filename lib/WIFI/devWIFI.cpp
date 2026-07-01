@@ -3,8 +3,6 @@
 #include "devWIFI.h"
 #include "devwifi_proxies.h"
 
-#if defined(PLATFORM_ESP8266) || defined(PLATFORM_ESP32)
-
 #if defined(PLATFORM_ESP32)
 #include <WiFi.h>
 #include <ESPmDNS.h>
@@ -38,9 +36,6 @@
 #include "config.h"
 #include "hardware.h"
 
-#if defined(MAVLINK_ENABLED)
-#include <MAVLink.h>
-#endif
 #if defined(TARGET_VRX_BACKPACK)
 #include "devHeadTracker.h"
 #include "crsf_protocol.h"
@@ -48,11 +43,10 @@
 extern VrxBackpackConfig config;
 extern bool sendRTCChangesToVrx;
 #elif defined(TARGET_TX_BACKPACK)
+#include <MAVLink.h>
 extern TxBackpackConfig config;
 extern wifi_service_t wifiService;
-#if defined(MAVLINK_ENABLED)
 extern MAVLink mavlink;
-#endif
 #elif defined(TARGET_TIMER_BACKPACK)
 extern TimerBackpackConfig config;
 #else
@@ -60,7 +54,7 @@ extern TimerBackpackConfig config;
 #endif
 extern unsigned long rebootTime;
 
-#if defined(AAT_BACKPACK)
+#if defined(TARGET_AAT_BACKPACK)
 static const char *myHostname = "elrs_aat";
 static const char *wifi_ap_ssid = "ExpressLRS AAT Backpack";
 #elif defined(TARGET_VRX_BACKPACK)
@@ -113,14 +107,12 @@ static bool do_flash = false;
 static uint32_t totalSize;
 static UpdateWrapper updater = UpdateWrapper();
 
-#if defined(MAVLINK_ENABLED)
+#if defined(TARGET_TX_BACKPACK)
 WiFiUDP mavlinkUDP;
 
 IPAddress gcsIP;
 bool gcsIPSet = false;
-#endif
 
-#if defined(TARGET_TX_BACKPACK)
 bool SendTxBackpackTelemetryViaUDP(const uint8_t *data, uint16_t size)
 {
   if (!data || size == 0)
@@ -128,9 +120,6 @@ bool SendTxBackpackTelemetryViaUDP(const uint8_t *data, uint16_t size)
     return false;
   }
 
-#if !defined(MAVLINK_ENABLED)
-  return false;
-#else
   if (!servicesStarted || !wifiStarted)
   {
     return false;
@@ -168,7 +157,6 @@ bool SendTxBackpackTelemetryViaUDP(const uint8_t *data, uint16_t size)
   }
 
   return mavlinkUDP.endPacket() == 1;
-#endif
 }
 #endif
 
@@ -599,7 +587,7 @@ static void WebUploadRTCUpdateHandler(AsyncWebServerRequest *request) {
   #endif
 }
 
-#if defined(MAVLINK_ENABLED)
+#if defined(TARGET_TX_BACKPACK)
 static void WebMAVLinkHandler(AsyncWebServerRequest *request)
 {
   mavlink_stats_t* stats = mavlink.GetMavlinkStats();
@@ -781,7 +769,7 @@ static void startServices()
   server.on("/config", HTTP_GET, GetConfiguration);
   server.on("/networks.json", WebUpdateSendNetworks);
   server.on("/sethome", WebUpdateSetHome);
-  #if defined(MAVLINK_ENABLED)
+  #if defined(TARGET_TX_BACKPACK)
   server.on("/setmavlink", WebUpdateSetMavLink);
   #endif
   server.on("/forget", WebUpdateForget);
@@ -806,8 +794,7 @@ static void startServices()
   {
     WebAatInit(server);
   }
-#endif
-#if defined(MAVLINK_ENABLED)
+#elif defined(TARGET_TX_BACKPACK)
   server.on("/mavlink", HTTP_GET, WebMAVLinkHandler);
 #endif
 
@@ -829,7 +816,7 @@ static void startServices()
   dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
 
   startMDNS();
-#if defined(MAVLINK_ENABLED)
+#if defined(TARGET_TX_BACKPACK)
   mavlinkUDP.begin(config.GetMavlinkListenPort());
 #endif
 
@@ -917,7 +904,7 @@ static void HandleWebUpdate()
 
   if (servicesStarted)
   {
-  #if defined(MAVLINK_ENABLED)
+  #if defined(TARGET_TX_BACKPACK)
     if (wifiService == WIFI_SERVICE_MAVLINK_TX)
     {
       // Dump the mavlink_to_gcs_buf to the GCS
@@ -985,7 +972,7 @@ static void HandleWebUpdate()
     #endif
     // When in STA mode, a small delay reduces power use from 90mA to 30mA when idle
     // In AP mode, it doesn't seem to make a measurable difference, but does not hurt
-#if defined(MAVLINK_ENABLED)
+#if defined(TARGET_TX_BACKPACK)
     if (!updater.isRunning() && wifiService != WIFI_SERVICE_MAVLINK_TX)
 #else
     if (!updater.isRunning())
@@ -1066,5 +1053,3 @@ device_t WIFI_device = {
   .event = event,
   .timeout = timeout
 };
-
-#endif

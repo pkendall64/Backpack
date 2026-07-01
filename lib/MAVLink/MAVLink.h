@@ -1,4 +1,4 @@
-#if defined(MAVLINK_ENABLED)
+#pragma once
 #include "common/mavlink.h"
 
 // Size of the buffer that we will use to store mavlink packets in units of mavlink_message_t
@@ -38,4 +38,3 @@ private:
     uint8_t             expectedSeq;
     bool                expectedSeqSet;
 };
-#endif
